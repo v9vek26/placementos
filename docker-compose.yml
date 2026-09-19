@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: placementos-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: placementos
+      POSTGRES_PASSWORD: placementos_dev_password
+      POSTGRES_DB: placementos
+    ports:
+      - "5432:5432"
+    volumes:
+      - placementos_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  placementos_postgres_data:
