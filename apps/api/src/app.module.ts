@@ -4,6 +4,7 @@ import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { UsersModule } from './users/users.module.js';
+import { StudentProfilesModule } from './student-profiles/student-profiles.module.js';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { UsersModule } from './users/users.module.js';
     }),
     PrismaModule,
     UsersModule,
+    StudentProfilesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
