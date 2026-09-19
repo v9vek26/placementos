@@ -6,4 +6,4 @@ dist/
 .next/
 coverage/
 .DS_Store
-*.log
+*.loggit status

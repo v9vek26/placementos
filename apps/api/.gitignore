@@ -1,5 +1,11 @@
 node_modules
-# Keep environment variables out of version control
+
+# Environment variables
 .env
 
-/prisma/generated/prisma
+# Generated Prisma Client
+/prisma/generated/
+/src/generated/
+
+# TypeScript build cache
+*.tsbuildinfo
