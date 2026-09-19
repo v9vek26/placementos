@@ -7,21 +7,21 @@ export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(data: CreateUserDto) {
-    const existingUser = await this.prisma.user.findUnique({
-      where: {
-        email: data.email,
-      },
-    });
+    try {
+      return await this.prisma.user.create({
+        data,
+      });
+    } catch (error: unknown) {
+      const prismaError = error as { code?: string };
 
-    if (existingUser) {
-      throw new ConflictException(
-        'A user with this email already exists',
-      );
+      if (prismaError.code === 'P2002') {
+        throw new ConflictException(
+          'A user with this email already exists',
+        );
+      }
+
+      throw error;
     }
-
-    return this.prisma.user.create({
-      data,
-    });
   }
 
   async findAll() {
