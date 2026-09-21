@@ -13,6 +13,28 @@ enum Role {
   ADMIN
 }
 
+enum JobType {
+  JOB
+  INTERNSHIP
+}
+
+enum WorkMode {
+  ONSITE
+  HYBRID
+  REMOTE
+}
+
+enum JobStatus {
+  DRAFT
+  OPEN
+  CLOSED
+}
+
+enum CompensationPeriod {
+  MONTHLY
+  ANNUAL
+}
+
 model User {
   id               String            @id @default(uuid())
   email            String            @unique
@@ -50,22 +72,60 @@ model Company {
   location    String?
   description String?
   recruiters  RecruiterProfile[]
+  jobs        Job[]
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
 }
 
 model RecruiterProfile {
-  id        String   @id @default(uuid())
-  userId    String   @unique
-  companyId String
-  fullName  String
-  jobTitle  String?
-  phone     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(uuid())
+  userId     String   @unique
+  companyId  String
+  fullName   String
+  jobTitle   String?
+  phone      String?
+  postedJobs Job[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId])
+}
+
+model Job {
+  id                   String             @id @default(uuid())
+  companyId            String
+  recruiterId          String
+  title                String
+  description          String
+  type                 JobType
+  status               JobStatus          @default(OPEN)
+  location             String?
+  workMode             WorkMode           @default(ONSITE)
+
+  compensationMin      Int?
+  compensationMax      Int?
+  compensationCurrency String             @default("INR")
+  compensationPeriod   CompensationPeriod?
+
+  minCgpa              Decimal?           @db.Decimal(4, 2)
+  maxActiveBacklogs    Int?
+  minTenthPercentage   Decimal?           @db.Decimal(5, 2)
+  minTwelfthPercentage Decimal?           @db.Decimal(5, 2)
+  eligibleBranches     String[]           @default([])
+  graduationYears      Int[]              @default([])
+
+  applicationDeadline  DateTime?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  company   Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  recruiter RecruiterProfile @relation(fields: [recruiterId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([recruiterId])
+  @@index([status])
+  @@index([type])
 }

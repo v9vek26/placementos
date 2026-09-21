@@ -7,6 +7,7 @@ import { UsersModule } from './users/users.module.js';
 import { StudentProfilesModule } from './student-profiles/student-profiles.module.js';
 import { CompaniesModule } from './companies/companies.module.js';
 import { RecruitersModule } from './recruiters/recruiters.module.js';
+import { JobsModule } from './jobs/jobs.module.js';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { RecruitersModule } from './recruiters/recruiters.module.js';
     StudentProfilesModule,
     CompaniesModule,
     RecruitersModule,
+    JobsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
