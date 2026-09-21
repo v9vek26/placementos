@@ -7,6 +7,7 @@ import {
 
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateStudentProfileDto } from './dto/create-student-profile.dto.js';
+import { UpdateStudentProfileDto } from './dto/update-student-profile.dto.js';
 
 @Injectable()
 export class StudentProfilesService {
@@ -72,5 +73,41 @@ export class StudentProfilesService {
     }
 
     return profile;
+  }
+
+  async update(id: string, data: UpdateStudentProfileDto) {
+    await this.findOne(id);
+
+    try {
+      return await this.prisma.studentProfile.update({
+        where: {
+          id,
+        },
+        data,
+        include: {
+          user: true,
+        },
+      });
+    } catch (error: unknown) {
+      const prismaError = error as { code?: string };
+
+      if (prismaError.code === 'P2002') {
+        throw new ConflictException(
+          'A student profile with this roll number already exists',
+        );
+      }
+
+      throw error;
+    }
+  }
+
+  async remove(id: string) {
+    await this.findOne(id);
+
+    return this.prisma.studentProfile.delete({
+      where: {
+        id,
+      },
+    });
   }
 }
