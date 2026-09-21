@@ -1,9 +1,11 @@
 node_modules/
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+!.env.*.example
 dist/
 .next/
 coverage/
 .DS_Store
-*.loggit status
+*.log
+*.tsbuildinfo
