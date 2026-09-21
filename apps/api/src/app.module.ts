@@ -8,6 +8,7 @@ import { StudentProfilesModule } from './student-profiles/student-profiles.modul
 import { CompaniesModule } from './companies/companies.module.js';
 import { RecruitersModule } from './recruiters/recruiters.module.js';
 import { JobsModule } from './jobs/jobs.module.js';
+import { EligibilityModule } from './eligibility/eligibility.module.js';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { JobsModule } from './jobs/jobs.module.js';
     CompaniesModule,
     RecruitersModule,
     JobsModule,
+    EligibilityModule,
   ],
   controllers: [AppController],
   providers: [AppService],
