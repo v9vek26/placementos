@@ -9,6 +9,7 @@ import { CompaniesModule } from './companies/companies.module.js';
 import { RecruitersModule } from './recruiters/recruiters.module.js';
 import { JobsModule } from './jobs/jobs.module.js';
 import { EligibilityModule } from './eligibility/eligibility.module.js';
+import { ApplicationsModule } from './applications/applications.module.js';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { EligibilityModule } from './eligibility/eligibility.module.js';
     RecruitersModule,
     JobsModule,
     EligibilityModule,
+    ApplicationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

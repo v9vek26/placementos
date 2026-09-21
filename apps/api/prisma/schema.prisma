@@ -35,6 +35,15 @@ enum CompensationPeriod {
   ANNUAL
 }
 
+enum ApplicationStatus {
+  APPLIED
+  UNDER_REVIEW
+  SHORTLISTED
+  REJECTED
+  SELECTED
+  WITHDRAWN
+}
+
 model User {
   id               String            @id @default(uuid())
   email            String            @unique
@@ -46,20 +55,21 @@ model User {
 }
 
 model StudentProfile {
-  id                String   @id @default(uuid())
-  userId            String   @unique
+  id                String        @id @default(uuid())
+  userId            String        @unique
   fullName          String
-  collegeRollNumber String   @unique
+  collegeRollNumber String        @unique
   branch            String
-  cgpa              Decimal? @db.Decimal(4, 2)
+  cgpa              Decimal?      @db.Decimal(4, 2)
   graduationYear    Int
-  activeBacklogs    Int      @default(0)
-  tenthPercentage   Decimal? @db.Decimal(5, 2)
-  twelfthPercentage Decimal? @db.Decimal(5, 2)
-  skills            String[] @default([])
+  activeBacklogs    Int           @default(0)
+  tenthPercentage   Decimal?      @db.Decimal(5, 2)
+  twelfthPercentage Decimal?      @db.Decimal(5, 2)
+  skills            String[]      @default([])
   resumeUrl         String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  applications      Application[]
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -118,6 +128,7 @@ model Job {
   graduationYears      Int[]              @default([])
 
   applicationDeadline  DateTime?
+  applications         Application[]
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
 
@@ -128,4 +139,21 @@ model Job {
   @@index([recruiterId])
   @@index([status])
   @@index([type])
+}
+
+model Application {
+  id               String            @id @default(uuid())
+  studentProfileId String
+  jobId            String
+  status           ApplicationStatus @default(APPLIED)
+  appliedAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  job            Job            @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([studentProfileId, jobId])
+  @@index([studentProfileId])
+  @@index([jobId])
+  @@index([status])
 }

@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
-import { EligibilityService } from './eligibility.service.js';
+
 import { EligibilityController } from './eligibility.controller.js';
+import { EligibilityService } from './eligibility.service.js';
 
 @Module({
+  controllers: [EligibilityController],
   providers: [EligibilityService],
-  controllers: [EligibilityController]
+  exports: [EligibilityService],
 })
 export class EligibilityModule {}
