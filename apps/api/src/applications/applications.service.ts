@@ -2,9 +2,13 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
 
+import type { AuthenticatedUser } from '../auth/authenticated-request.js';
+import { Role } from '../generated/prisma/enums.js';
+import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { EligibilityService } from '../eligibility/eligibility.service.js';
 import { CreateApplicationDto } from './dto/create-application.dto.js';
@@ -17,11 +21,24 @@ export class ApplicationsService {
     private readonly eligibilityService: EligibilityService,
   ) {}
 
-  async create(data: CreateApplicationDto) {
-    const eligibility = await this.eligibilityService.check({
-      studentProfileId: data.studentProfileId,
-      jobId: data.jobId,
+  async create(data: CreateApplicationDto, user: AuthenticatedUser) {
+    if (user.role !== Role.STUDENT) throw new ForbiddenException();
+    const profile = await this.prisma.studentProfile.findUnique({
+      where: { userId: user.userId },
+      select: { id: true },
     });
+    if (!profile || profile.id !== data.studentProfileId) {
+      throw new ForbiddenException(
+        'You may only apply with your own student profile.',
+      );
+    }
+    const eligibility = await this.eligibilityService.check(
+      {
+        studentProfileId: profile.id,
+        jobId: data.jobId,
+      },
+      user,
+    );
 
     if (!eligibility.eligible) {
       throw new BadRequestException({
@@ -33,7 +50,7 @@ export class ApplicationsService {
     const existingApplication = await this.prisma.application.findUnique({
       where: {
         studentProfileId_jobId: {
-          studentProfileId: data.studentProfileId,
+          studentProfileId: profile.id,
           jobId: data.jobId,
         },
       },
@@ -47,7 +64,7 @@ export class ApplicationsService {
 
     return this.prisma.application.create({
       data: {
-        studentProfileId: data.studentProfileId,
+        studentProfileId: profile.id,
         jobId: data.jobId,
       },
       include: {
@@ -61,8 +78,9 @@ export class ApplicationsService {
     });
   }
 
-  async findAll() {
+  async findAll(user: AuthenticatedUser) {
     return this.prisma.application.findMany({
+      where: this.visibleTo(user),
       include: {
         studentProfile: true,
         job: {
@@ -77,9 +95,10 @@ export class ApplicationsService {
     });
   }
 
-  async findOne(id: string) {
-    const application = await this.prisma.application.findUnique({
+  async findOne(id: string, user: AuthenticatedUser) {
+    const application = await this.prisma.application.findFirst({
       where: {
+        ...this.visibleTo(user),
         id,
       },
       include: {
@@ -102,11 +121,15 @@ export class ApplicationsService {
   async updateStatus(
     id: string,
     data: UpdateApplicationStatusDto,
+    user: AuthenticatedUser,
   ) {
-    await this.findOne(id);
+    if (user.role !== Role.RECRUITER && user.role !== Role.ADMIN)
+      throw new ForbiddenException();
+    await this.findOne(id, user);
 
     return this.prisma.application.update({
       where: {
+        ...this.visibleTo(user),
         id,
       },
       data: {
@@ -121,5 +144,17 @@ export class ApplicationsService {
         },
       },
     });
+  }
+  private visibleTo(user: AuthenticatedUser): Prisma.ApplicationWhereInput {
+    switch (user.role) {
+      case Role.STUDENT:
+        return { studentProfile: { userId: user.userId } };
+      case Role.RECRUITER:
+        return { job: { recruiter: { userId: user.userId } } };
+      case Role.ADMIN:
+        return {};
+      default:
+        throw new ForbiddenException();
+    }
   }
 }

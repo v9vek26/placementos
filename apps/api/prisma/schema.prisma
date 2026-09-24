@@ -47,6 +47,7 @@ enum ApplicationStatus {
 model User {
   id               String            @id @default(uuid())
   email            String            @unique
+  passwordHash     String?
   role             Role              @default(STUDENT)
   studentProfile   StudentProfile?
   recruiterProfile RecruiterProfile?

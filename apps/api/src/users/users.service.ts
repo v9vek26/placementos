@@ -8,6 +8,8 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateUserDto } from './dto/create-user.dto.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
 
+import { safeUserSelect } from '../prisma/safe-user.select.js';
+
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
@@ -16,14 +18,13 @@ export class UsersService {
     try {
       return await this.prisma.user.create({
         data,
+        select: safeUserSelect,
       });
     } catch (error: unknown) {
       const prismaError = error as { code?: string };
 
       if (prismaError.code === 'P2002') {
-        throw new ConflictException(
-          'A user with this email already exists',
-        );
+        throw new ConflictException('A user with this email already exists');
       }
 
       throw error;
@@ -32,6 +33,7 @@ export class UsersService {
 
   async findAll() {
     return this.prisma.user.findMany({
+      select: safeUserSelect,
       orderBy: {
         createdAt: 'desc',
       },
@@ -43,6 +45,7 @@ export class UsersService {
       where: {
         id,
       },
+      select: safeUserSelect,
     });
 
     if (!user) {
@@ -61,14 +64,13 @@ export class UsersService {
           id,
         },
         data,
+        select: safeUserSelect,
       });
     } catch (error: unknown) {
       const prismaError = error as { code?: string };
 
       if (prismaError.code === 'P2002') {
-        throw new ConflictException(
-          'A user with this email already exists',
-        );
+        throw new ConflictException('A user with this email already exists');
       }
 
       throw error;
@@ -82,6 +84,7 @@ export class UsersService {
       where: {
         id,
       },
+      select: safeUserSelect,
     });
   }
 }

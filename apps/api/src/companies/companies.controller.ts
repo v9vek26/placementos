@@ -4,45 +4,49 @@ import {
   Delete,
   Get,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
+  UseGuards,
 } from '@nestjs/common';
 
+import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import { Roles } from '../auth/roles.decorator.js';
+import { RolesGuard } from '../auth/roles.guard.js';
+import { Role } from '../generated/prisma/enums.js';
 import { CompaniesService } from './companies.service.js';
 import { CreateCompanyDto } from './dto/create-company.dto.js';
 import { UpdateCompanyDto } from './dto/update-company.dto.js';
 
 @Controller('companies')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(Role.STUDENT, Role.RECRUITER, Role.ADMIN)
 export class CompaniesController {
-  constructor(
-    private readonly companiesService: CompaniesService,
-  ) {}
-
+  constructor(private readonly service: CompaniesService) {}
   @Post()
+  @Roles(Role.ADMIN)
   async create(@Body() data: CreateCompanyDto) {
-    return this.companiesService.create(data);
+    return this.service.create(data);
   }
-
   @Get()
   async findAll() {
-    return this.companiesService.findAll();
+    return this.service.findAll();
   }
-
   @Get(':id')
-  async findOne(@Param('id') id: string) {
-    return this.companiesService.findOne(id);
+  async findOne(@Param('id', new ParseUUIDPipe()) id: string) {
+    return this.service.findOne(id);
   }
-
   @Patch(':id')
+  @Roles(Role.ADMIN)
   async update(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body() data: UpdateCompanyDto,
   ) {
-    return this.companiesService.update(id, data);
+    return this.service.update(id, data);
   }
-
   @Delete(':id')
-  async remove(@Param('id') id: string) {
-    return this.companiesService.remove(id);
+  @Roles(Role.ADMIN)
+  async remove(@Param('id', new ParseUUIDPipe()) id: string) {
+    return this.service.remove(id);
   }
 }

@@ -21,9 +21,7 @@ export class CompaniesService {
       const prismaError = error as { code?: string };
 
       if (prismaError.code === 'P2002') {
-        throw new ConflictException(
-          'A company with this name already exists',
-        );
+        throw new ConflictException('A company with this name already exists');
       }
 
       throw error;
@@ -66,9 +64,7 @@ export class CompaniesService {
       const prismaError = error as { code?: string };
 
       if (prismaError.code === 'P2002') {
-        throw new ConflictException(
-          'A company with this name already exists',
-        );
+        throw new ConflictException('A company with this name already exists');
       }
 
       throw error;

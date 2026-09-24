@@ -1,7 +1,11 @@
+import type { AuthenticatedUser } from '../auth/authenticated-request.js';
+import { Role } from '../generated/prisma/enums.js';
+import { safeUserSelect } from '../prisma/safe-user.select.js';
 import {
   BadRequestException,
   ConflictException,
   Injectable,
+  ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
 
@@ -13,7 +17,8 @@ import { UpdateRecruiterProfileDto } from './dto/update-recruiter-profile.dto.js
 export class RecruitersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(data: CreateRecruiterProfileDto) {
+  async create(data: CreateRecruiterProfileDto, actor: AuthenticatedUser) {
+    if (actor.role !== Role.ADMIN) throw new ForbiddenException();
     const user = await this.prisma.user.findUnique({
       where: {
         id: data.userId,
@@ -44,7 +49,7 @@ export class RecruitersService {
       return await this.prisma.recruiterProfile.create({
         data,
         include: {
-          user: true,
+          user: { select: safeUserSelect },
           company: true,
         },
       });
@@ -61,10 +66,11 @@ export class RecruitersService {
     }
   }
 
-  async findAll() {
+  async findAll(actor: AuthenticatedUser) {
     return this.prisma.recruiterProfile.findMany({
+      where: this.scope(actor),
       include: {
-        user: true,
+        user: { select: safeUserSelect },
         company: true,
       },
       orderBy: {
@@ -73,13 +79,14 @@ export class RecruitersService {
     });
   }
 
-  async findOne(id: string) {
-    const recruiter = await this.prisma.recruiterProfile.findUnique({
+  async findOne(id: string, actor: AuthenticatedUser) {
+    const recruiter = await this.prisma.recruiterProfile.findFirst({
       where: {
+        ...this.scope(actor),
         id,
       },
       include: {
-        user: true,
+        user: { select: safeUserSelect },
         company: true,
       },
     });
@@ -91,8 +98,16 @@ export class RecruitersService {
     return recruiter;
   }
 
-  async update(id: string, data: UpdateRecruiterProfileDto) {
-    await this.findOne(id);
+  async update(
+    id: string,
+    data: UpdateRecruiterProfileDto,
+    actor: AuthenticatedUser,
+  ) {
+    if (actor.role !== Role.ADMIN && data.companyId !== undefined)
+      throw new ForbiddenException(
+        'Only admins may change company membership.',
+      );
+    await this.findOne(id, actor);
 
     if (data.companyId) {
       const company = await this.prisma.company.findUnique({
@@ -108,23 +123,32 @@ export class RecruitersService {
 
     return this.prisma.recruiterProfile.update({
       where: {
+        ...this.scope(actor),
         id,
       },
       data,
       include: {
-        user: true,
+        user: { select: safeUserSelect },
         company: true,
       },
     });
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
+  async remove(id: string, actor: AuthenticatedUser) {
+    if (actor.role !== Role.ADMIN) throw new ForbiddenException();
+    await this.findOne(id, actor);
 
     return this.prisma.recruiterProfile.delete({
       where: {
+        ...this.scope(actor),
         id,
       },
     });
+  }
+
+  private scope(actor: AuthenticatedUser): { userId?: string } {
+    if (actor.role === Role.ADMIN) return {};
+    if (actor.role === Role.RECRUITER) return { userId: actor.userId };
+    throw new ForbiddenException();
   }
 }

@@ -10,6 +10,7 @@ import { RecruitersModule } from './recruiters/recruiters.module.js';
 import { JobsModule } from './jobs/jobs.module.js';
 import { EligibilityModule } from './eligibility/eligibility.module.js';
 import { ApplicationsModule } from './applications/applications.module.js';
+import { AuthModule } from './auth/auth.module.js';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { ApplicationsModule } from './applications/applications.module.js';
     JobsModule,
     EligibilityModule,
     ApplicationsModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

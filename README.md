@@ -1,50 +1,53 @@
 # PlacementOS
 
-**A placement and internship platform in development, starting with the backend domain and eligibility rules.**
+A local placement and internship MVP for students, recruiters, and campus administrators.
 
-PlacementOS models students, recruiters, companies, and opportunities, with an explainable eligibility check for each student–job pairing. This is my flagship engineering project: the current focus is turning the API foundation into a tested, authenticated product.
+Students maintain an academic profile, browse real opportunities, check eligibility, apply, and track progress. Recruiters manage their own jobs and applicants. Administrators manage roles, companies, and recruiter onboarding.
 
-**Status:** backend implementation + frontend scaffold. Not ready for public deployment or real student data. Authentication and authorization are not implemented.
+**Status:** implemented and verified locally on 2026-09-24. Public deployment and production operations have not been verified. The browser currently stores short-lived JWTs in localStorage; see [security and hardening](docs/STATUS.md).
 
-[Getting started](docs/DEVELOPMENT.md) · [Architecture](docs/ARCHITECTURE.md) · [API reference](docs/API.md) · [Feature status and roadmap](docs/STATUS.md) · [Security](SECURITY.md)
+[Development guide](docs/DEVELOPMENT.md) · [Architecture](docs/ARCHITECTURE.md) · [API map](docs/API.md) · [Verification and backlog](docs/STATUS.md) · [Security](SECURITY.md)
 
-## What is implemented
+## Implemented
 
-| Area | Current implementation |
-| --- | --- |
-| Users and profiles | CRUD endpoints for users, student profiles, and recruiter profiles; role checks when creating profiles |
-| Companies and opportunities | Company and job/internship CRUD; compensation-range validation; jobs linked to a recruiter's company |
-| Eligibility | Checks job status, deadline, CGPA, backlogs, school percentages, branch, and graduation year; returns individual checks and reasons |
-| Persistence | PostgreSQL schema, Prisma models, and committed migrations |
-| Input validation | Global NestJS validation pipe and DTO validation |
-| Web application | Next.js starter page only; no placement workflows or API integration yet |
+- Registration, login, current-session verification, database-backed RBAC, and ownership enforcement.
+- Distinct student, recruiter, and admin dashboards with role-aware navigation.
+- Student profile, job search, explainable eligibility checks, applications, and status tracking.
+- Recruiter profile edits, create/edit/close/delete jobs, applicant review, and status updates.
+- Admin user role management, company CRUD, recruiter onboarding/management, and global jobs/applications views.
+- Shared API/session handling, expired-session redirects, accessible form labels, responsive layouts, and loading/error/empty states.
 
-These are source-reviewed capabilities, not a claim that every flow has passed integration testing. Role fields and profile checks do not provide access control. See the [status record](docs/STATUS.md) for test gaps.
+## Stack
 
-## Stack and layout
+NestJS + Prisma/PostgreSQL API; Next.js 16 App Router + React 19 + Tailwind 4 web app; pnpm workspace.
 
-TypeScript · NestJS · Prisma · PostgreSQL · Next.js · React · pnpm workspaces
+## Start locally
 
-```text
-apps/api/       NestJS controllers, services, DTOs, Prisma schema and migrations
-apps/web/       Next.js App Router scaffold
-docs/           Setup, architecture, endpoint map, and feature status
-docker-compose.yml  Local PostgreSQL service
+With dependencies, database, Prisma client, migrations, and local environment configured as described in the [development guide](docs/DEVELOPMENT.md), open two terminals in the repository root:
+
+```sh
+pnpm dev:api
 ```
 
-## Run locally
+```sh
+pnpm dev:web
+```
 
-Use the pinned pnpm version in `package.json` and a compatible Node.js installation. Start with the complete [development guide](docs/DEVELOPMENT.md), including environment configuration and Prisma generation. API default: `http://localhost:4000`; web default: `http://localhost:3000`.
+Open [PlacementOS](http://localhost:3000). The API defaults to port 4000.
 
-## Next milestones
+## Verify
 
-1. Authentication, role authorization, and ownership checks.
-2. Meaningful service and database integration tests, including eligibility boundaries.
-3. Student/recruiter interfaces connected to the API.
-4. Application submission and placement workflows.
+```sh
+pnpm build
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm test:e2e
+pnpm test:authorization
+pnpm --filter api test:authorization:db
+pnpm test:smoke
+```
 
-The roadmap is planned work. No production deployment, usage metrics, or completed placement workflow is claimed.
+The smoke test creates generated fixtures in the configured local database and removes them by their IDs in a `finally` block. Use a local development database; never reset or reseed existing data for these checks.
 
-## Contributing and license
-
-See [CONTRIBUTING.md](CONTRIBUTING.md). No repository-level license is currently provided; package metadata is inconsistent and does not establish a clear project-wide license.
+See [CONTRIBUTING.md](CONTRIBUTING.md). A repository-wide license has not been established.

@@ -1,22 +1,19 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import { AppController } from './app.controller.js';
-import { AppService } from './app.service.js';
-
+import { PrismaService } from './prisma/prisma.service.js';
 describe('AppController', () => {
-  let appController: AppController;
-
-  beforeEach(async () => {
-    const app: TestingModule = await Test.createTestingModule({
+  it('returns database health and the user count', async () => {
+    const count = vi.fn().mockResolvedValue(3);
+    const module = await Test.createTestingModule({
       controllers: [AppController],
-      providers: [AppService],
+      providers: [{ provide: PrismaService, useValue: { user: { count } } }],
     }).compile();
-
-    appController = app.get<AppController>(AppController);
-  });
-
-  describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+    await expect(module.get(AppController).getHealth()).resolves.toEqual({
+      status: 'ok',
+      database: 'connected',
+      users: 3,
     });
+    expect(count).toHaveBeenCalledOnce();
+    await module.close();
   });
 });

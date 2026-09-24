@@ -35,7 +35,7 @@ export class UpdateJobDto {
 
   @IsOptional()
   @IsString()
-  location?: string;
+  location?: string | null;
 
   @IsOptional()
   @IsEnum(WorkMode)
@@ -44,12 +44,12 @@ export class UpdateJobDto {
   @IsOptional()
   @IsInt()
   @Min(0)
-  compensationMin?: number;
+  compensationMin?: number | null;
 
   @IsOptional()
   @IsInt()
   @Min(0)
-  compensationMax?: number;
+  compensationMax?: number | null;
 
   @IsOptional()
   @IsString()
@@ -57,27 +57,27 @@ export class UpdateJobDto {
 
   @IsOptional()
   @IsEnum(CompensationPeriod)
-  compensationPeriod?: CompensationPeriod;
+  compensationPeriod?: CompensationPeriod | null;
 
   @IsOptional()
   @Min(0)
   @Max(10)
-  minCgpa?: number;
+  minCgpa?: number | null;
 
   @IsOptional()
   @IsInt()
   @Min(0)
-  maxActiveBacklogs?: number;
+  maxActiveBacklogs?: number | null;
 
   @IsOptional()
   @Min(0)
   @Max(100)
-  minTenthPercentage?: number;
+  minTenthPercentage?: number | null;
 
   @IsOptional()
   @Min(0)
   @Max(100)
-  minTwelfthPercentage?: number;
+  minTwelfthPercentage?: number | null;
 
   @IsOptional()
   @IsArray()
@@ -91,5 +91,5 @@ export class UpdateJobDto {
 
   @IsOptional()
   @IsISO8601()
-  applicationDeadline?: string;
+  applicationDeadline?: string | null;
 }

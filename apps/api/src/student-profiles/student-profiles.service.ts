@@ -1,7 +1,11 @@
+import type { AuthenticatedUser } from '../auth/authenticated-request.js';
+import { Role } from '../generated/prisma/enums.js';
+import { safeUserSelect } from '../prisma/safe-user.select.js';
 import {
   BadRequestException,
   ConflictException,
   Injectable,
+  ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
 
@@ -13,7 +17,12 @@ import { UpdateStudentProfileDto } from './dto/update-student-profile.dto.js';
 export class StudentProfilesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(data: CreateStudentProfileDto) {
+  async create(data: CreateStudentProfileDto, actor: AuthenticatedUser) {
+    if (
+      actor.role !== Role.ADMIN &&
+      (actor.role !== Role.STUDENT || data.userId !== actor.userId)
+    )
+      throw new ForbiddenException();
     const user = await this.prisma.user.findUnique({
       where: {
         id: data.userId,
@@ -47,10 +56,11 @@ export class StudentProfilesService {
     }
   }
 
-  async findAll() {
+  async findAll(actor: AuthenticatedUser) {
     return this.prisma.studentProfile.findMany({
+      where: this.scope(actor),
       include: {
-        user: true,
+        user: { select: safeUserSelect },
       },
       orderBy: {
         createdAt: 'desc',
@@ -58,13 +68,14 @@ export class StudentProfilesService {
     });
   }
 
-  async findOne(id: string) {
-    const profile = await this.prisma.studentProfile.findUnique({
+  async findOne(id: string, actor: AuthenticatedUser) {
+    const profile = await this.prisma.studentProfile.findFirst({
       where: {
+        ...this.scope(actor),
         id,
       },
       include: {
-        user: true,
+        user: { select: safeUserSelect },
       },
     });
 
@@ -75,17 +86,22 @@ export class StudentProfilesService {
     return profile;
   }
 
-  async update(id: string, data: UpdateStudentProfileDto) {
-    await this.findOne(id);
+  async update(
+    id: string,
+    data: UpdateStudentProfileDto,
+    actor: AuthenticatedUser,
+  ) {
+    await this.findOne(id, actor);
 
     try {
       return await this.prisma.studentProfile.update({
         where: {
+          ...this.scope(actor),
           id,
         },
         data,
         include: {
-          user: true,
+          user: { select: safeUserSelect },
         },
       });
     } catch (error: unknown) {
@@ -101,13 +117,20 @@ export class StudentProfilesService {
     }
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
+  async remove(id: string, actor: AuthenticatedUser) {
+    await this.findOne(id, actor);
 
     return this.prisma.studentProfile.delete({
       where: {
+        ...this.scope(actor),
         id,
       },
     });
+  }
+
+  private scope(actor: AuthenticatedUser): { userId?: string } {
+    if (actor.role === Role.ADMIN) return {};
+    if (actor.role === Role.STUDENT) return { userId: actor.userId };
+    throw new ForbiddenException();
   }
 }

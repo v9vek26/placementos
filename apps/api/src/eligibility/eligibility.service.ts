@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import type { AuthenticatedUser } from '../auth/authenticated-request.js';
+import { Role } from '../generated/prisma/enums.js';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CheckEligibilityDto } from './dto/check-eligibility.dto.js';
@@ -7,10 +13,24 @@ import { CheckEligibilityDto } from './dto/check-eligibility.dto.js';
 export class EligibilityService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async check(data: CheckEligibilityDto) {
-    const student = await this.prisma.studentProfile.findUnique({
+  async check(data: CheckEligibilityDto, actor: AuthenticatedUser) {
+    if (![Role.STUDENT, Role.RECRUITER, Role.ADMIN].includes(actor.role))
+      throw new ForbiddenException();
+    if (actor.role === Role.RECRUITER) {
+      const application = await this.prisma.application.findFirst({
+        where: {
+          studentProfileId: data.studentProfileId,
+          jobId: data.jobId,
+          job: { recruiter: { userId: actor.userId } },
+        },
+        select: { id: true },
+      });
+      if (!application) throw new NotFoundException('Application not found');
+    }
+    const student = await this.prisma.studentProfile.findFirst({
       where: {
         id: data.studentProfileId,
+        ...(actor.role === Role.STUDENT ? { userId: actor.userId } : {}),
       },
     });
 
@@ -27,7 +47,7 @@ export class EligibilityService {
       },
     });
 
-    if (!job) {
+    if (!job || (actor.role === Role.STUDENT && job.status === 'DRAFT')) {
       throw new NotFoundException('Job not found');
     }
 
@@ -53,10 +73,8 @@ export class EligibilityService {
           job.minCgpa === null ||
           (student.cgpa !== null &&
             Number(student.cgpa) >= Number(job.minCgpa)),
-        actual:
-          student.cgpa !== null ? Number(student.cgpa) : null,
-        required:
-          job.minCgpa !== null ? Number(job.minCgpa) : null,
+        actual: student.cgpa !== null ? Number(student.cgpa) : null,
+        required: job.minCgpa !== null ? Number(job.minCgpa) : null,
       },
 
       activeBacklogs: {
@@ -71,8 +89,7 @@ export class EligibilityService {
         passed:
           job.minTenthPercentage === null ||
           (student.tenthPercentage !== null &&
-            Number(student.tenthPercentage) >=
-              Number(job.minTenthPercentage)),
+            Number(student.tenthPercentage) >= Number(job.minTenthPercentage)),
         actual:
           student.tenthPercentage !== null
             ? Number(student.tenthPercentage)
@@ -170,9 +187,7 @@ export class EligibilityService {
       );
     }
 
-    const eligible = Object.values(checks).every(
-      (check) => check.passed,
-    );
+    const eligible = Object.values(checks).every((check) => check.passed);
 
     return {
       eligible,

@@ -1,29 +1,43 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import { Test } from '@nestjs/testing';
+import type { INestApplication } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { randomBytes } from 'node:crypto';
 import request from 'supertest';
-import { App } from 'supertest/types';
-import { AppModule } from './../src/app.module.js';
-
-describe('AppController (e2e)', () => {
-  let app: INestApplication<App>;
-
-  beforeEach(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
+import type { Server } from 'node:http';
+import { AppModule } from '../src/app.module.js';
+import { PrismaService } from '../src/prisma/prisma.service.js';
+describe('AppModule (e2e)', () => {
+  let app: INestApplication<Server>;
+  beforeAll(async () => {
+    const module = await Test.createTestingModule({ imports: [AppModule] })
+      .overrideProvider(PrismaService)
+      .useValue({ user: { count: async () => 0 } })
+      .overrideProvider(ConfigService)
+      .useValue(
+        new ConfigService({ JWT_SECRET: randomBytes(32).toString('hex') }),
+      )
+      .compile();
+    app = module.createNestApplication();
     await app.init();
   });
-
-  it('/ (GET)', () => {
-    return request(app.getHttpServer())
+  afterAll(async () => {
+    if (app) await app.close();
+  });
+  it('returns the current health JSON contract', async () => {
+    await request(app.getHttpServer())
       .get('/')
       .expect(200)
-      .expect('Hello World!');
+      .expect({ status: 'ok', database: 'connected', users: 0 });
   });
-
-  afterEach(async () => {
-    await app.close();
+  it.each([
+    '/users',
+    '/student-profiles',
+    '/recruiters',
+    '/jobs',
+    '/companies',
+    '/applications',
+    '/auth/me',
+  ])('protects %s from anonymous reads', async (url) => {
+    await request(app.getHttpServer()).get(url).expect(401);
   });
 });
