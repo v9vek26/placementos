@@ -2,6 +2,8 @@
 
 Deploy in this order: **PostgreSQL -> API -> web**. No deployment or database changes were performed as part of this preparation. Existing local defaults remain unchanged.
 
+Use the [manual release checklist](MANUAL_RELEASE.md) for review/push, isolated database validation, administrator onboarding, smoke tests, backups and rollback instructions.
+
 ## Environment
 
 | App | Variable | Requirement |
@@ -34,6 +36,8 @@ pnpm --filter api build
 5. Confirm the final web origin is in API `CORS_ORIGINS`; restart the API after changing it. Verify HTTPS, browser-to-API requests, sign-in and role access using operator-approved accounts. Unauthenticated protected routes should return 401. On a fresh database, use the operator-only `admin:bootstrap` command described in [local setup](DEVELOPMENT.md) after registering the intended administrator account; it is read-only unless that exact email is explicitly confirmed.
 
 Local builds do not prove a Linux hosting install, fresh-database migrations, or production workflows. Complete those checks before treating the deployment as verified. See [existing limitations and hardening](STATUS.md).
+
+After deployment, run `pnpm check:deployment --api-url https://YOUR_API_HOST --web-url https://YOUR_WEB_HOST`. This performs 16 anonymous GET/OPTIONS checks and exits nonzero on failure; it never creates accounts or sends application writes. A pass must be followed by the approved role/workflow checks in the manual checklist.
 
 ## Suggested hosting setup (not provisioned)
 

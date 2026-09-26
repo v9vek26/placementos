@@ -23,64 +23,71 @@ export class ApplicationsService {
 
   async create(data: CreateApplicationDto, user: AuthenticatedUser) {
     if (user.role !== Role.STUDENT) throw new ForbiddenException();
-    const profile = await this.prisma.studentProfile.findUnique({
-      where: { userId: user.userId },
-      select: { id: true },
-    });
-    if (!profile || profile.id !== data.studentProfileId) {
-      throw new ForbiddenException(
-        'You may only apply with your own student profile.',
-      );
-    }
-    const eligibility = await this.eligibilityService.check(
-      {
-        studentProfileId: profile.id,
-        jobId: data.jobId,
-      },
-      user,
-    );
-
-    if (!eligibility.eligible) {
-      throw new BadRequestException({
-        message: 'Student is not eligible for this opportunity.',
-        reasons: eligibility.reasons,
-      });
-    }
-
-    const existingApplication = await this.prisma.application.findUnique({
-      where: {
-        studentProfileId_jobId: {
-          studentProfileId: profile.id,
-          jobId: data.jobId,
-        },
-      },
-    });
-
-    if (existingApplication) {
-      throw new ConflictException(
-        'Student has already applied to this opportunity.',
-      );
-    }
-
     try {
-      return await this.prisma.application.create({
-        data: {
-          studentProfileId: profile.id,
-          jobId: data.jobId,
-        },
-        include: {
-          studentProfile: true,
-          job: {
-            include: {
-              company: true,
+      return await this.prisma.$transaction(
+        async (database) => {
+          // Shared row locks permit parallel applications, but hold profile edits,
+          // job closure and deletion until commit. Always lock profile before job.
+          const profiles = await database.$queryRaw<Array<{ id: string }>>`
+          SELECT "id" FROM "StudentProfile"
+          WHERE "id" = ${data.studentProfileId} AND "userId" = ${user.userId}
+          FOR SHARE
+        `;
+          if (!profiles.length) {
+            throw new ForbiddenException(
+              'You may only apply with your own student profile.',
+            );
+          }
+          await database.$queryRaw`
+          SELECT "id" FROM "Job" WHERE "id" = ${data.jobId} FOR SHARE
+        `;
+          const eligibility = await this.eligibilityService.check(
+            data,
+            user,
+            database,
+          );
+          if (!eligibility.eligible) {
+            throw new BadRequestException({
+              message: 'Student is not eligible for this opportunity.',
+              reasons: eligibility.reasons,
+            });
+          }
+          const existingApplication = await database.application.findUnique({
+            where: {
+              studentProfileId_jobId: {
+                studentProfileId: data.studentProfileId,
+                jobId: data.jobId,
+              },
             },
-          },
+          });
+          if (existingApplication) {
+            throw new ConflictException(
+              'Student has already applied to this opportunity.',
+            );
+          }
+          return database.application.create({
+            data: {
+              studentProfileId: data.studentProfileId,
+              jobId: data.jobId,
+            },
+            include: {
+              studentProfile: true,
+              job: { include: { company: true } },
+            },
+          });
         },
-      });
+        { isolationLevel: 'ReadCommitted', maxWait: 5000, timeout: 10000 },
+      );
     } catch (error: unknown) {
-      if ((error as { code?: string }).code === 'P2002') {
+      const code = (error as { code?: string }).code;
+      if (code === 'P2002') {
         throw new ConflictException(
           'Student has already applied to this opportunity.',
+        );
+      }
+      if (code === 'P2034' || code === 'P2028') {
+        throw new ConflictException(
+          'The opportunity or profile changed while applying. Refresh and try again.',
         );
       }
       throw error;

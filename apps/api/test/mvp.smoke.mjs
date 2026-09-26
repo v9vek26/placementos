@@ -4,10 +4,12 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { Test } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { ValidationPipe } from '@nestjs/common';
+import { testDatabaseTarget } from './test-database-target.mjs';
 
-// Isolated HTTP server, existing local database, only generated fixtures mutated.
+// Isolated HTTP server and explicitly confirmed test database; only fixtures mutated.
 // No real account password or production signing key is read or printed.
 process.env.JWT_SECRET = randomBytes(48).toString('hex');
+process.env.DATABASE_URL = testDatabaseTarget();
 const { AppModule } = await import('../dist/app.module.js');
 const { PrismaService } = await import('../dist/prisma/prisma.service.js');
 const module = await Test.createTestingModule({

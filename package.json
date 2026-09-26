@@ -10,7 +10,8 @@
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
-    "test": "pnpm -r test",
+    "test": "node --test scripts/*.test.mjs && pnpm -r test",
+    "check:deployment": "node scripts/deployment-smoke.mjs",
     "test:e2e": "pnpm --filter api test:e2e",
     "test:authorization": "pnpm --filter api test:authorization",
     "test:smoke": "pnpm --filter api test:smoke"

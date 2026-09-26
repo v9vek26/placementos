@@ -47,6 +47,15 @@ const matches = (row, where) =>
     row.studentProfile.userId === where.studentProfile.userId) &&
   (!where.job || row.job.recruiter.userId === where.job.recruiter.userId);
 const prisma = {
+  $transaction: async (callback) => callback(prisma),
+  $queryRaw: async (query, ...values) => {
+    if (query.join('').includes('StudentProfile')) {
+      return !noProfile && values[0] === ids.profile && values[1] === 'student'
+        ? [{ id: ids.profile }]
+        : [];
+    }
+    return [{ id: ids.job }];
+  },
   user: {
     findUnique: async ({ where }) => {
       const role = {

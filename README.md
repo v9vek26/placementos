@@ -4,9 +4,11 @@ A local placement and internship MVP for students, recruiters, and campus admini
 
 Students maintain an academic profile, browse real opportunities, check eligibility, apply, and track progress. Recruiters manage their own jobs and applicants. Administrators manage roles, companies, and recruiter onboarding.
 
-**Status:** MVP implemented, with local hardening and verification updated on 2026-09-26: 122 database-free tests and 28 read-only database checks passed. Public deployment and production operations have not been verified. The browser currently stores short-lived JWTs in localStorage; see [security and hardening](docs/STATUS.md).
+**Status:** MVP implemented, with local hardening and verification updated on 2026-09-26: 147 database-free tests, 28 read-only database checks and 16 deployment smoke checks passed locally. Public deployment and production operations have not been verified. The browser currently stores short-lived JWTs in localStorage; see [security and hardening](docs/STATUS.md).
 
 [Development guide](docs/DEVELOPMENT.md) · [Deployment guide](docs/DEPLOYMENT.md) · [Architecture](docs/ARCHITECTURE.md) · [API map](docs/API.md) · [Verification and backlog](docs/STATUS.md) · [Security](SECURITY.md)
+
+For step-by-step operator instructions, use the [manual release checklist](docs/MANUAL_RELEASE.md).
 
 ## Implemented
 
@@ -50,6 +52,8 @@ pnpm --filter api test:authorization:db
 pnpm test:smoke
 ```
 
-The smoke test creates generated fixtures in the configured local database and removes them by their IDs in a `finally` block. Use a local development database; never reset or reseed existing data for these checks.
+The write smoke test requires `TEST_DATABASE_URL` for a separate database ending in `_test`, plus `TEST_DATABASE_CONFIRM` matching its name. It never falls back to the ordinary `DATABASE_URL`. It creates generated fixtures and removes only their IDs in a `finally` block. Follow the [manual release checklist](docs/MANUAL_RELEASE.md) before running it; never reset or reseed existing data.
+
+For anonymous, read-only checks of a running deployment, use `pnpm check:deployment --api-url https://YOUR_API_HOST --web-url https://YOUR_WEB_HOST`. Local HTTP loopback URLs require `--allow-local`.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). A repository-wide license has not been established.

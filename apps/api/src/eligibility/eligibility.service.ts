@@ -7,17 +7,22 @@ import {
 } from '@nestjs/common';
 
 import { PrismaService } from '../prisma/prisma.service.js';
+import type { Prisma } from '../generated/prisma/client.js';
 import { CheckEligibilityDto } from './dto/check-eligibility.dto.js';
 
 @Injectable()
 export class EligibilityService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async check(data: CheckEligibilityDto, actor: AuthenticatedUser) {
+  async check(
+    data: CheckEligibilityDto,
+    actor: AuthenticatedUser,
+    database: Prisma.TransactionClient = this.prisma,
+  ) {
     if (![Role.STUDENT, Role.RECRUITER, Role.ADMIN].includes(actor.role))
       throw new ForbiddenException();
     if (actor.role === Role.RECRUITER) {
-      const application = await this.prisma.application.findFirst({
+      const application = await database.application.findFirst({
         where: {
           studentProfileId: data.studentProfileId,
           jobId: data.jobId,
@@ -27,7 +32,7 @@ export class EligibilityService {
       });
       if (!application) throw new NotFoundException('Application not found');
     }
-    const student = await this.prisma.studentProfile.findFirst({
+    const student = await database.studentProfile.findFirst({
       where: {
         id: data.studentProfileId,
         ...(actor.role === Role.STUDENT ? { userId: actor.userId } : {}),
@@ -38,7 +43,7 @@ export class EligibilityService {
       throw new NotFoundException('Student profile not found');
     }
 
-    const job = await this.prisma.job.findUnique({
+    const job = await database.job.findUnique({
       where: {
         id: data.jobId,
       },

@@ -2,6 +2,15 @@
 
 Latest verification: 2026-09-26, Node 24.20.0 and pnpm 12.4.2. Both apps build and run locally; existing PostgreSQL passed 28 read-only checks across all three roles. No public deployment is claimed.
 
+## Latest continuation
+
+- `pnpm verify` passed again after application transaction changes: 43 API unit, 7 web session, 8 mocked end-to-end, 84 authorization/operator/target-safety and 5 deployment-checker tests (147 total). Both apps passed lint, typecheck and production builds.
+- Application submission now locks the owned student profile and target job with PostgreSQL `FOR SHARE`, then checks eligibility and inserts using the same transaction. This prevents those records changing between the decision and insertion. Regression tests cover transaction scope, changed eligibility, closed/draft jobs, ownership, duplicates and conflicts. Real PostgreSQL write/concurrency tests remain unrun.
+- Database-write smoke testing now requires a separately confirmed `TEST_DATABASE_URL` with a database name ending in `_test`; it refuses ordinary `DATABASE_URL` fallback and production mode. The no-write verification pipeline covers these guards.
+- Added `pnpm check:deployment`, an anonymous GET/OPTIONS-only health/CORS/access/header checker; all 16 checks passed against the running local API and web. Repeated all 28 read-only database checks successfully. The existing PostgreSQL container was reused; no data/schema changes were made.
+- Docker is installed at a user-specific location on this host. Its earlier apparent absence was sandbox/PATH visibility, not a missing installation. API and web were restarted from their built outputs for these checks.
+- Added the [manual release checklist](MANUAL_RELEASE.md). Production deployment, hosted CI, migrations on a fresh database and authenticated write workflows remain operator steps. The non-failing Node module-format warning in web tests remains.
+
 ## 2026-09-26 hardening and readiness
 
 - `pnpm verify` passed: both apps' lint/typechecks/builds, 33 API unit tests, 7 web session tests, 8 mocked API end-to-end tests, and 74 authorization/operator tests (122 total).
@@ -49,5 +58,5 @@ Existing uncommitted work was preserved. Existing records were not reset, reseed
 - Add pagination/server-side search for large collections and a generated API contract to prevent frontend enum/type drift.
 - Consider soft deletion; current destructive domain operations retain the existing cascade policy. Administrator account protections are now enforced server-side.
 - Define application transition rules and a student withdrawal policy if needed. Current UI intentionally follows the existing allowed statuses.
-- Duplicate submission races now return 409. Atomic eligibility enforcement against concurrent job/profile changes still needs a dedicated transaction design and real-database concurrency tests.
+- Duplicate submission races return 409. Eligibility checks and insertion now share a transaction with profile/job row locks; real-database concurrency validation is still required before release.
 - Verify fresh-database migrations, Linux hosting/CI, public deployment, TLS, CSP, monitoring and backups before release. Clean local installation, basic security headers, and the production dependency audit are verified; they do not establish these remaining results.
