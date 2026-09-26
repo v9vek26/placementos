@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - Node.js compatible with Next.js/NestJS; the verification run used Node 24.20.0.
-- pnpm is required. The existing manifest pins 12.4.2; this machine actually ran pnpm 11.19.0 successfully. No package-manager migration or dependency upgrade was performed in this MVP change.
+- pnpm 12.4.2, as pinned by the manifest. A clean-source install selected and verified that version on 2026-09-26.
 - PostgreSQL, already running locally for the verification. The supplied Docker Compose service is an option for a new local setup.
 
 ## Initial setup
@@ -19,6 +19,7 @@ Configure `apps/api/.env` using the existing example as a starting point:
 - `JWT_SECRET`: a strong random signing secret, kept only in the ignored local environment or deployment secret manager.
 - `PORT`: optional; defaults to 4000.
 - `CORS_ORIGINS`: optional comma-separated exact frontend origins; defaults to `http://localhost:3000`.
+- `TRUST_PROXY_HOPS`: optional; leave at `0` locally. See the deployment guide for reverse-proxy configuration.
 
 For a different API address, put `NEXT_PUBLIC_API_URL` in `apps/web/.env.local`. It defaults to `http://localhost:4000`; it is a public address, never a secret. Rebuild the web app when changing it for production.
 
@@ -54,11 +55,15 @@ pnpm --filter web start
 
 Registration creates a STUDENT account only. Use the existing administrator account locally; credentials are intentionally omitted from documentation. A new deployment needs an administrator provisioned by its operator through a trusted administrative process.
 
+For a fresh installation with no administrator, the operator first registers their own sign-in account. From the repository root, run `pnpm --filter api admin:bootstrap --email REGISTERED_EMAIL` to check eligibility without writes. After verifying the intended account, repeat with `--confirm-email REGISTERED_EMAIL` to assign ADMIN. This command only promotes the exact existing account, refuses installations that already have an administrator, and never creates users or prints password hashes. It was tested with mocked persistence; no actual promotion was performed during this task.
+
 For a recruiter: register an account, have an administrator assign the RECRUITER role under Users, create the company, then onboard the recruiter by linking the account and company under Recruiters. The recruiter can then post opportunities.
 
 Do not use `POST /users` as a substitute for registration: that management endpoint does not establish a login password.
 
 ## Checks
+
+The repeatable, database-free verification command is `pnpm verify`. It runs both apps' lint/typechecks, unit/session tests, mocked API end-to-end and authorization tests, and production builds. Generate the Prisma client first. The GitHub Actions workflow runs this command without database credentials; hosted CI execution is only verified after pushing and observing a successful run.
 
 ```sh
 pnpm build
@@ -71,7 +76,7 @@ pnpm --filter api test:authorization:db
 pnpm test:smoke
 ```
 
-`test:authorization:db` reads existing local records without mutations. `test:smoke` uses a temporary signing key and isolated local HTTP listener, registers generated accounts, exercises workflow writes, and cleans up only its generated IDs. Neither test needs existing users' passwords or prints tokens.
+`test:authorization:db` reads existing local records without mutations. `test:smoke` uses a temporary signing key and isolated local HTTP listener, registers generated accounts, exercises workflow writes, and cleans up only its generated IDs. Neither test needs existing users' passwords or prints tokens. The smoke test is deliberately excluded from `pnpm verify`; run it only with explicit permission to create fixtures in a designated disposable database.
 
 ## Troubleshooting
 

@@ -6,6 +6,8 @@ Next.js client page → shared API helper → bearer JWT → NestJS JWT guard �
 
 The API rejects unknown input properties through its global validation pipe. User response selections omit password hashes. Current database roles take precedence over JWT role claims, so role revocation applies to existing tokens.
 
+Login and registration share a bounded per-IP, per-process limiter (20 attempts/minute). Administrator updates/deletions recheck current authority in a serializable transaction, reject self-demotion/self-deletion, and preserve at least one administrator. Serialization conflicts return 409 for a client refresh/retry. Registration and application unique-constraint races also return 409. The public health endpoint uses `SELECT 1` and does not reveal account counts.
+
 ## Frontend
 
 `components/workspace.tsx` verifies `/auth/me`, provides session context, and renders role-aware navigation for dashboard/admin layouts. Admin pages are gated before mounting their data components. The server remains the authority for authorization.

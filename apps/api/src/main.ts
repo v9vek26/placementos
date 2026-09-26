@@ -1,15 +1,26 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
+import type { Request, Response, NextFunction } from 'express';
 import { AppModule } from './app.module.js';
+import { runtimeConfig } from './runtime-config.js';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const config = runtimeConfig(process.env);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  app.disable('x-powered-by');
+  if (config.trustProxy) app.set('trust proxy', config.trustProxy);
+  app.use((_request: Request, response: Response, next: NextFunction) => {
+    response.setHeader('X-Content-Type-Options', 'nosniff');
+    response.setHeader('X-Frame-Options', 'DENY');
+    response.setHeader('Referrer-Policy', 'no-referrer');
+    response.setHeader('Cache-Control', 'no-store');
+    next();
+  });
+  app.enableShutdownHooks();
 
   app.enableCors({
-    origin: (process.env.CORS_ORIGINS || 'http://localhost:3000')
-      .split(',')
-      .map((origin) => origin.trim())
-      .filter(Boolean),
+    origin: config.origins,
   });
 
   app.useGlobalPipes(
@@ -20,7 +31,7 @@ async function bootstrap() {
     }),
   );
 
-  await app.listen(process.env.PORT ?? 4000);
+  await app.listen(config.port, '0.0.0.0');
 }
 
 bootstrap().catch(() => {

@@ -2,6 +2,7 @@ import { Test } from '@nestjs/testing';
 import { UsersController } from './users.controller.js';
 import { UsersService } from './users.service.js';
 import { Role } from '../generated/prisma/enums.js';
+import type { AuthenticatedRequest } from '../auth/authenticated-request.js';
 describe('UsersController', () => {
   it('passes an administrator role change to the users service', async () => {
     const update = vi
@@ -11,10 +12,21 @@ describe('UsersController', () => {
       controllers: [UsersController],
       providers: [{ provide: UsersService, useValue: { update } }],
     }).compile();
+    const actor = {
+      userId: 'admin',
+      role: Role.ADMIN,
+      email: 'admin@example.invalid',
+    };
     await expect(
-      module.get(UsersController).update('user', { role: Role.RECRUITER }),
+      module.get(UsersController).update('user', { role: Role.RECRUITER }, {
+        user: actor,
+      } as AuthenticatedRequest),
     ).resolves.toEqual({ id: 'user', role: Role.RECRUITER });
-    expect(update).toHaveBeenCalledWith('user', { role: Role.RECRUITER });
+    expect(update).toHaveBeenCalledWith(
+      'user',
+      { role: Role.RECRUITER },
+      actor,
+    );
     await module.close();
   });
 });

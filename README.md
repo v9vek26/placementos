@@ -4,7 +4,7 @@ A local placement and internship MVP for students, recruiters, and campus admini
 
 Students maintain an academic profile, browse real opportunities, check eligibility, apply, and track progress. Recruiters manage their own jobs and applicants. Administrators manage roles, companies, and recruiter onboarding.
 
-**Status:** implemented and verified locally on 2026-09-24. Public deployment and production operations have not been verified. The browser currently stores short-lived JWTs in localStorage; see [security and hardening](docs/STATUS.md).
+**Status:** MVP implemented, with local hardening and verification updated on 2026-09-26: 122 database-free tests and 28 read-only database checks passed. Public deployment and production operations have not been verified. The browser currently stores short-lived JWTs in localStorage; see [security and hardening](docs/STATUS.md).
 
 [Development guide](docs/DEVELOPMENT.md) · [Deployment guide](docs/DEPLOYMENT.md) · [Architecture](docs/ARCHITECTURE.md) · [API map](docs/API.md) · [Verification and backlog](docs/STATUS.md) · [Security](SECURITY.md)
 
@@ -36,6 +36,8 @@ pnpm dev:web
 Open [PlacementOS](http://localhost:3000). The API defaults to port 4000.
 
 ## Verify
+
+Run `pnpm verify` for the complete database-free verification pipeline (generate the Prisma client first). GitHub Actions uses the same checks. Database-write smoke tests below are separate and require an explicitly designated test database.
 
 ```sh
 pnpm build

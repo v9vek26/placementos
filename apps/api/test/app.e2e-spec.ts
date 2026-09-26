@@ -11,7 +11,7 @@ describe('AppModule (e2e)', () => {
   beforeAll(async () => {
     const module = await Test.createTestingModule({ imports: [AppModule] })
       .overrideProvider(PrismaService)
-      .useValue({ user: { count: async () => 0 } })
+      .useValue({ $queryRaw: async () => [{ '?column?': 1 }] })
       .overrideProvider(ConfigService)
       .useValue(
         new ConfigService({ JWT_SECRET: randomBytes(32).toString('hex') }),
@@ -27,7 +27,7 @@ describe('AppModule (e2e)', () => {
     await request(app.getHttpServer())
       .get('/')
       .expect(200)
-      .expect({ status: 'ok', database: 'connected', users: 0 });
+      .expect({ status: 'ok', database: 'connected' });
   });
   it.each([
     '/users',

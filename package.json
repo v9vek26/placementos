@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "verify": "pnpm lint && pnpm typecheck && pnpm test && pnpm test:e2e && pnpm test:authorization && pnpm --filter web build",
     "dev:api": "pnpm --filter api start:dev",
     "dev:web": "pnpm --filter web dev",
     "build": "pnpm -r build",

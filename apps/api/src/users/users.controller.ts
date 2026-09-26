@@ -7,6 +7,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 
@@ -17,6 +18,7 @@ import { Role } from '../generated/prisma/enums.js';
 import { UsersService } from './users.service.js';
 import { CreateUserDto } from './dto/create-user.dto.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
+import type { AuthenticatedRequest } from '../auth/authenticated-request.js';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -39,11 +41,15 @@ export class UsersController {
   async update(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() data: UpdateUserDto,
+    @Req() request: AuthenticatedRequest,
   ) {
-    return this.service.update(id, data);
+    return this.service.update(id, data, request.user);
   }
   @Delete(':id')
-  async remove(@Param('id', new ParseUUIDPipe()) id: string) {
-    return this.service.remove(id);
+  async remove(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.service.remove(id, request.user);
   }
 }

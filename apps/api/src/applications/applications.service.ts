@@ -62,20 +62,29 @@ export class ApplicationsService {
       );
     }
 
-    return this.prisma.application.create({
-      data: {
-        studentProfileId: profile.id,
-        jobId: data.jobId,
-      },
-      include: {
-        studentProfile: true,
-        job: {
-          include: {
-            company: true,
+    try {
+      return await this.prisma.application.create({
+        data: {
+          studentProfileId: profile.id,
+          jobId: data.jobId,
+        },
+        include: {
+          studentProfile: true,
+          job: {
+            include: {
+              company: true,
+            },
           },
         },
-      },
-    });
+      });
+    } catch (error: unknown) {
+      if ((error as { code?: string }).code === 'P2002') {
+        throw new ConflictException(
+          'Student has already applied to this opportunity.',
+        );
+      }
+      throw error;
+    }
   }
 
   async findAll(user: AuthenticatedUser) {

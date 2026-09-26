@@ -46,10 +46,8 @@ export default function LoginPage() {
         </div>
         <p className="eyebrow">WHERE POTENTIAL MEETS OPPORTUNITY</p>
         <h1>
-          Your future,
-          <br />
-          one opportunity
-          <br />
+          Your future, <br />
+          one opportunity <br />
           at a time.
         </h1>
         <p>

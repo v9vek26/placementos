@@ -116,6 +116,7 @@ const project = (model, row, args = {}) => {
   return result;
 };
 const prisma = {};
+prisma.$transaction = async (callback) => callback(prisma);
 for (const model of [
   'user',
   'studentProfile',
@@ -127,7 +128,8 @@ for (const model of [
   const find = (args) =>
     db[model].find((row) => matches(expand(model, row), args.where));
   prisma[model] = {
-    count: async () => db[model].length,
+    count: async (args = {}) =>
+      db[model].filter((row) => matches(expand(model, row), args.where)).length,
     findUnique: async (args) => project(model, find(args), args),
     findFirst: async (args) => project(model, find(args), args),
     findMany: async (args = {}) =>
@@ -335,6 +337,13 @@ void test('database role takes precedence over an old signed ADMIN claim', async
   await call('get', '/users', 'admin').expect(403);
   const { body } = await call('get', '/auth/me', 'admin').expect(200);
   assert.equal(body.role, 'STUDENT');
+});
+void test('admin cannot demote or delete their own account through direct HTTP requests', async () => {
+  await call('patch', `/users/${ids.admin}`, 'admin', {
+    role: 'STUDENT',
+  }).expect(403);
+  await call('delete', `/users/${ids.admin}`, 'admin').expect(403);
+  assert.equal(writes, 0);
 });
 void test('a deleted account immediately loses access with its existing token', async () => {
   db.user = db.user.filter((row) => row.id !== ids.student);
@@ -552,4 +561,23 @@ void test('eligibility does not disclose a draft job to a student', async () => 
     studentProfileId: ids.profile,
     jobId: ids.draft,
   }).expect(404);
+});
+
+void test('repeated login attempts return 429 with Retry-After, while session reads still work', async () => {
+  let limited;
+  for (let attempt = 0; attempt <= 20; attempt++) {
+    const response = await call('post', '/auth/login', null, {
+      email: 'missing@example.invalid',
+      password: 'unused-test-input',
+    });
+    if (response.status === 429) {
+      limited = response;
+      break;
+    }
+    assert.equal(response.status, 401);
+  }
+  assert.ok(limited, 'login must be rate-limited');
+  assert.ok(Number(limited.headers['retry-after']) > 0);
+  await call('get', '/auth/me', 'admin').expect(200);
+  assert.equal(writes, 0);
 });

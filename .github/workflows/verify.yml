@@ -1,0 +1,32 @@
+name: Verify PlacementOS
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # Generation requires a URL but never connects. No database is provisioned.
+      DATABASE_URL: postgresql://unused:unused@127.0.0.1:1/unused
+      NEXT_PUBLIC_API_URL: https://api.example.invalid
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - run: npm install --global pnpm@12.4.2
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter api exec prisma generate --config prisma7.config.ts
+      - run: pnpm --filter api exec prisma validate --config prisma7.config.ts
+      - run: pnpm verify
+      - run: pnpm audit --prod

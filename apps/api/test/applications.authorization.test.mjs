@@ -27,6 +27,7 @@ const ids = {
 let app;
 let rows;
 let duplicate;
+let concurrentDuplicate;
 let eligible;
 let noProfile;
 let writes;
@@ -68,6 +69,7 @@ const prisma = {
       rows.find((row) => matches(row, where)) ?? null,
     findUnique: async () => (duplicate ? rows[0] : null),
     create: async ({ data }) => {
+      if (concurrentDuplicate) throw { code: 'P2002' };
       writes++;
       return { id: ids.application, ...data };
     },
@@ -110,6 +112,7 @@ after(async () => {
 beforeEach(() => {
   writes = 0;
   duplicate = false;
+  concurrentDuplicate = false;
   eligible = true;
   noProfile = false;
   rows = [
@@ -134,6 +137,11 @@ const call = (method, path, role, body) => {
   return req;
 };
 const creation = { studentProfileId: ids.profile, jobId: ids.job };
+void test('a duplicate inserted after the precheck returns 409, not 500', async () => {
+  concurrentDuplicate = true;
+  await call('post', '/applications', 'STUDENT', creation).expect(409);
+  assert.equal(writes, 0);
+});
 /** @type {Array<[string, string, object?]>} */
 const routes = [
   ['post', '/applications', creation],

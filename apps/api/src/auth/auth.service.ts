@@ -25,26 +25,33 @@ export class AuthService {
     });
 
     if (existingUser) {
-      throw new ConflictException(
-        'An account with this email already exists.',
-      );
+      throw new ConflictException('An account with this email already exists.');
     }
 
     const passwordHash = await bcrypt.hash(data.password, 12);
 
-    const user = await this.prisma.user.create({
-      data: {
-        email: data.email,
-        passwordHash,
-      },
-      select: {
-        id: true,
-        email: true,
-        role: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
+    const user = await this.prisma.user
+      .create({
+        data: {
+          email: data.email,
+          passwordHash,
+        },
+        select: {
+          id: true,
+          email: true,
+          role: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      })
+      .catch((error: unknown) => {
+        if ((error as { code?: string }).code === 'P2002') {
+          throw new ConflictException(
+            'An account with this email already exists.',
+          );
+        }
+        throw error;
+      });
 
     const accessToken = await this.createAccessToken(user);
 
@@ -62,9 +69,7 @@ export class AuthService {
     });
 
     if (!user?.passwordHash) {
-      throw new UnauthorizedException(
-        'Invalid email or password.',
-      );
+      throw new UnauthorizedException('Invalid email or password.');
     }
 
     const passwordMatches = await bcrypt.compare(
@@ -73,9 +78,7 @@ export class AuthService {
     );
 
     if (!passwordMatches) {
-      throw new UnauthorizedException(
-        'Invalid email or password.',
-      );
+      throw new UnauthorizedException('Invalid email or password.');
     }
 
     const accessToken = await this.createAccessToken(user);

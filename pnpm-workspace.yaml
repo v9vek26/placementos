@@ -7,3 +7,8 @@ allowBuilds:
   prisma: true
   unrs-resolver: true
   bcrypt: true
+
+# Patched transitive dependencies used by Prisma's CLI/config tooling.
+overrides:
+  "@prisma/config>deepmerge-ts": "8.0.0"
+  "prisma>mysql2": "3.23.1"

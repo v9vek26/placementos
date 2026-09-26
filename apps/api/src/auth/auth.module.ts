@@ -8,6 +8,7 @@ import { RolesGuard } from './roles.guard.js';
 import { JwtAuthGuard } from './jwt-auth.guard.js';
 import { JwtStrategy } from './jwt.strategy.js';
 import { AuthService } from './auth.service.js';
+import { AuthRateLimitGuard } from './auth-rate-limit.guard.js';
 
 @Module({
   imports: [
@@ -22,7 +23,13 @@ import { AuthService } from './auth.service.js';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, JwtAuthGuard, RolesGuard],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    JwtAuthGuard,
+    RolesGuard,
+    AuthRateLimitGuard,
+  ],
   exports: [AuthService, JwtModule, PassportModule, JwtAuthGuard, RolesGuard],
 })
 export class AuthModule {}

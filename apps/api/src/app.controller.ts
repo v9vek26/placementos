@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, ServiceUnavailableException } from '@nestjs/common';
 import { PrismaService } from './prisma/prisma.service.js';
 
 @Controller()
@@ -7,12 +7,15 @@ export class AppController {
 
   @Get()
   async getHealth() {
-    const userCount = await this.prisma.user.count();
+    try {
+      await this.prisma.$queryRaw`SELECT 1`;
+    } catch {
+      throw new ServiceUnavailableException('Database is unavailable.');
+    }
 
     return {
       status: 'ok',
       database: 'connected',
-      users: userCount,
     };
   }
 }
