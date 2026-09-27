@@ -142,7 +142,50 @@ export async function deploymentSmoke({
       "Web blocks framing",
       response.headers.get("x-frame-options") === "DENY",
     );
-    await response.body?.cancel();
+    const policy = response.headers.get("content-security-policy") || "";
+    const directives = new Map(
+      policy.split(";").map((part) => {
+        const [name, ...values] = part.trim().split(/\s+/);
+        return [name, values];
+      }),
+    );
+    const scripts = directives.get("script-src") || [];
+    const nonceSource = scripts.find((source) =>
+      /^'nonce-[A-Za-z0-9+/=_-]{16,}'$/.test(source),
+    );
+    const nonce = nonceSource?.slice(7, -1);
+    check(
+      "Web scripts require nonces without unsafe inline/eval",
+      nonce &&
+        scripts.includes("'strict-dynamic'") &&
+        !scripts.includes("'unsafe-inline'") &&
+        !scripts.includes("'unsafe-eval'"),
+    );
+    const connections = directives.get("connect-src") || [];
+    check(
+      "Web CSP restricts connections to this API and itself",
+      connections.includes(api) &&
+        connections.includes("'self'") &&
+        connections.every((source) => [api, "'self'"].includes(source)),
+    );
+    check(
+      "Web CSP blocks plugins, base tags and framing",
+      ["object-src", "base-uri", "frame-ancestors"].every(
+        (name) => directives.get(name)?.join(" ") === "'none'",
+      ),
+    );
+    check(
+      "Web nonce responses are not cached",
+      response.headers.get("cache-control")?.includes("no-store"),
+    );
+    const html = await response.text();
+    const scriptTags = [...html.matchAll(/<script\b([^>]*)>/gi)];
+    check(
+      "Web HTML scripts carry the response nonce",
+      nonce &&
+        scriptTags.length > 0 &&
+        scriptTags.every((tag) => tag[1].includes(`nonce="${nonce}"`)),
+    );
   });
   return results;
 }

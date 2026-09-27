@@ -60,3 +60,13 @@ Existing uncommitted work was preserved. Existing records were not reset, reseed
 - Define application transition rules and a student withdrawal policy if needed. Current UI intentionally follows the existing allowed statuses.
 - Duplicate submission races return 409. Eligibility checks and insertion now share a transaction with profile/job row locks; real-database concurrency validation is still required before release.
 - Verify fresh-database migrations, Linux hosting/CI, public deployment, TLS, CSP, monitoring and backups before release. Clean local installation, basic security headers, and the production dependency audit are verified; they do not establish these remaining results.
+
+## 2026-09-27 security continuation
+
+- Full pnpm verify passed: 43 API unit, 12 web, 8 mocked e2e, 84 authorization/operator and 5 deployment checker tests (152 total); both apps lint, typecheck and production build passed.
+- Hosted Linux CI passed for faeba06: https://github.com/v9vek26/placementos/actions/runs/36263159349 . This supersedes earlier statements that no hosted result had been observed. New local changes need their own run after pushing.
+- Added nonce-based script CSP, restricted browser connections, blocked plugins/base tags/framing, and private/no-store HTML. Pages now render dynamically; inline styles remain permitted for framework compatibility.
+- Added validated public API-origin configuration; local defaults retained.
+- Production HTTP checks confirmed distinct nonces across requests and matching nonces on all 12 scripts; browser login/register switching hydrated without console errors. No forms were submitted.
+- Deployment checker expanded to 21 checks. Unit fixtures pass; a full live 21-check run remains pending. Previous 16 live checks and 28 read-only database checks were not rerun this session.
+- No backend, dependency, schema or data changes, and no public deployment. Temporary preview processes ended during continuation; restart using the manual guide if needed.

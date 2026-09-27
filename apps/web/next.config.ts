@@ -1,4 +1,8 @@
 import type { NextConfig } from "next";
+import { publicApiOrigin } from "./lib/public-config.mjs";
+
+// Reject a malformed public API address before creating a broken web build.
+publicApiOrigin(process.env.NEXT_PUBLIC_API_URL);
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,

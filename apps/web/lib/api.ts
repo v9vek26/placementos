@@ -1,6 +1,6 @@
-export const API_URL = (
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
-).replace(/\/$/, "");
+import { publicApiOrigin } from "./public-config.mjs";
+
+export const API_URL = publicApiOrigin(process.env.NEXT_PUBLIC_API_URL);
 
 export class ApiError extends Error {
   status: number;

@@ -37,7 +37,7 @@ pnpm --filter api build
 
 Local builds do not prove a Linux hosting install, fresh-database migrations, or production workflows. Complete those checks before treating the deployment as verified. See [existing limitations and hardening](STATUS.md).
 
-After deployment, run `pnpm check:deployment --api-url https://YOUR_API_HOST --web-url https://YOUR_WEB_HOST`. This performs 16 anonymous GET/OPTIONS checks and exits nonzero on failure; it never creates accounts or sends application writes. A pass must be followed by the approved role/workflow checks in the manual checklist.
+After deployment, run `pnpm check:deployment --api-url https://YOUR_API_HOST --web-url https://YOUR_WEB_HOST`. This performs 21 anonymous GET/OPTIONS checks and exits nonzero on failure; it never creates accounts or sends application writes. A pass must be followed by the approved role/workflow checks in the manual checklist.
 
 ## Suggested hosting setup (not provisioned)
 
@@ -56,3 +56,7 @@ Start command: `pnpm --filter api start:prod`. Health path: `/`. Run the reviewe
 The built-in limiter permits 20 combined login/registration attempts per IP per minute per API process. Use a shared gateway limiter before running multiple API replicas. CI (`pnpm verify`) uses mocked persistence and does not deploy or write to any database.
 
 Provider references: [Render monorepos](https://render.com/docs/monorepo-support), [Render PostgreSQL](https://render.com/docs/postgresql-creating-connecting), [Render Node versions](https://render.com/docs/node-version), [Vercel monorepos](https://vercel.com/docs/monorepos).
+
+## Browser security and rendering
+
+The frontend now generates a fresh script nonce per request. All pages render dynamically and require a Next.js server/function; static export and public CDN caching of HTML are unsupported. Preserve private/no-store response behavior. CSP restricts browser connections to the configured API origin and the web origin. Set NEXT_PUBLIC_API_URL before building; credentials, extra paths and query strings are rejected. Inline styles remain allowed for React/Next compatibility; production scripts require nonces without unsafe-eval. Development permits debugging and hot-reload sockets.

@@ -43,7 +43,7 @@ Open `http://localhost:3000`. Run the new read-only check from a third terminal:
 pnpm check:deployment --api-url http://localhost:4000 --web-url http://localhost:3000 --allow-local
 ```
 
-Expected: all 16 checks pass and exit code 0. It checks health, database connectivity, anonymous 401, CORS and response headers. It does not test authenticated writes, browser behavior or the frontend's built-in API address. A failure is reported without printing secrets or response bodies.
+Expected: all 21 checks pass and exit code 0. It checks health, database connectivity, anonymous 401, CORS and response headers. It does not test authenticated writes, browser behavior or the frontend's built-in API address. A failure is reported without printing secrets or response bodies.
 
 ## 3. Validate migrations and write workflows on a separate database
 
@@ -141,7 +141,7 @@ Rollback: stop rollout if health checks fail; retain logs without secrets. Redep
 - Email verification and password recovery, including a configured email provider.
 - Persistent administrator audit logs.
 - Shared rate limiting for multiple API replicas; current limiter is per process.
-- Strict Content Security Policy, pagination/server-side search and generated API types.
+- Pagination/server-side search and generated API types. Nonce-based script CSP is implemented; inline styles remain permitted for framework compatibility.
 - Explicit application transition/withdrawal rules and a soft-deletion policy.
 
 Implement and test these as individual changes. None is implied complete by a passing local build or deployment smoke check.

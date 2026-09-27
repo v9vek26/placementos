@@ -78,7 +78,7 @@ pnpm test:smoke
 
 `test:authorization:db` reads existing local records without mutations. `test:smoke` requires an explicit `TEST_DATABASE_URL` pointing to a separate database whose name ends in `_test`, and `TEST_DATABASE_CONFIRM` matching that name. It never falls back to `DATABASE_URL` and refuses production mode. It uses a temporary signing key and isolated local HTTP listener, registers generated accounts, exercises workflow writes, and cleans up only its generated IDs. Neither test needs existing users' passwords or prints tokens. The smoke test is deliberately excluded from `pnpm verify`; see the [manual release checklist](MANUAL_RELEASE.md) before running it.
 
-`pnpm check:deployment --api-url http://localhost:4000 --web-url http://localhost:3000 --allow-local` runs 16 anonymous read-only checks against running local services. For hosting, supply HTTPS origins and omit `--allow-local`. The check does not log in or create accounts.
+`pnpm check:deployment --api-url http://localhost:4000 --web-url http://localhost:3000 --allow-local` runs 21 anonymous read-only checks against running local services. For hosting, supply HTTPS origins and omit `--allow-local`. The check does not log in or create accounts.
 
 ## Troubleshooting
 

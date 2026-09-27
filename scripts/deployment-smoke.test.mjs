@@ -4,6 +4,8 @@ import { deploymentOrigin, deploymentSmoke } from "./deployment-smoke.mjs";
 
 const apiUrl = "https://api.example.invalid";
 const webUrl = "https://web.example.invalid";
+const nonce = "0123456789abcdef0123456789abcdef";
+const csp = `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'; connect-src 'self' ${apiUrl}; object-src 'none'; base-uri 'none'; frame-ancestors 'none'`;
 const secure = {
   "x-content-type-options": "nosniff",
   "x-frame-options": "DENY",
@@ -21,9 +23,16 @@ function healthy(url, options) {
       },
     });
   if (url.startsWith(webUrl))
-    return new Response("<html></html>", {
-      headers: { ...secure, "content-type": "text/html" },
-    });
+    return new Response(
+      `<html><script nonce="${nonce}" src="/script.js"></script></html>`,
+      {
+        headers: {
+          ...secure,
+          "content-type": "text/html",
+          "content-security-policy": csp,
+        },
+      },
+    );
   return Response.json(
     { status: "ok", database: "connected" },
     { headers: secure },
@@ -62,7 +71,7 @@ test("healthy deployment passes using only anonymous GET/OPTIONS without redirec
     },
   });
   assert.equal(calls.length, 5);
-  assert.equal(results.length, 16);
+  assert.equal(results.length, 21);
   assert.ok(results.every((result) => result.passed));
 });
 test("detects unsafe anonymous access, wildcard CORS, and redirects", async () => {
