@@ -46,12 +46,12 @@ Use Render PostgreSQL and a Render Node web service for the API, with Vercel for
 **Render database/API:** choose the same region and use the database's internal connection URL in the API secret manager. Leave the API service's Root Directory at the repository root so the workspace lockfile is available. Set `NODE_VERSION=24`, the API values above, and `NODE_ENV=production`. Build command:
 
 ```sh
-pnpm install --frozen-lockfile --prod=false && pnpm --filter api exec prisma generate --config prisma7.config.ts && pnpm --filter api build
+NODE_ENV=development pnpm install --frozen-lockfile && pnpm --filter api exec prisma generate --config prisma7.config.ts && pnpm --filter api build
 ```
 
 Start command: `pnpm --filter api start:prod`. Health path: `/`. Run the reviewed migration command from step 2 separately as the release step. Do not put migrations or seeds in the build command. Verify proxy topology before setting `TRUST_PROXY_HOPS`.
 
-**Vercel web:** select Next.js, Node 24, and Root Directory `apps/web`; include source files outside that directory. Install command: `cd ../.. && pnpm install --frozen-lockfile --prod=false`. Build command: `pnpm build`. Keep the framework's default output directory. Set `NEXT_PUBLIC_API_URL` for the deployment environment before building. Add only intended web origins to API CORS; do not wildcard all preview domains.
+**Vercel web:** select Next.js, Node 24, and Root Directory `apps/web`; include source files outside that directory. Install command: `cd ../.. && NODE_ENV=development pnpm install --frozen-lockfile`. Build command: `pnpm build`. Keep the framework's default output directory. Set `NEXT_PUBLIC_API_URL` for the deployment environment before building. Add only intended web origins to API CORS; do not wildcard all preview domains.
 
 The built-in limiter permits 20 combined login/registration attempts per IP per minute per API process. Use a shared gateway limiter before running multiple API replicas. CI (`pnpm verify`) uses mocked persistence and does not deploy or write to any database.
 
@@ -60,3 +60,21 @@ Provider references: [Render monorepos](https://render.com/docs/monorepo-support
 ## Browser security and rendering
 
 The frontend now generates a fresh script nonce per request. All pages render dynamically and require a Next.js server/function; static export and public CDN caching of HTML are unsupported. Preserve private/no-store response behavior. CSP restricts browser connections to the configured API origin and the web origin. Set NEXT_PUBLIC_API_URL before building; credentials, extra paths and query strings are rejected. Inline styles remain allowed for React/Next compatibility; production scripts require nonces without unsafe-eval. Development permits debugging and hot-reload sockets.
+
+## Safe startup diagnostics
+
+Startup failures identify the stage (configuration, initialization, or listen).
+Configuration errors name the invalid setting but never its value. Known network,
+database-authentication, TLS, and port error codes map to static messages; arbitrary
+exceptions, stacks, causes, and connection options are withheld. Nest startup
+logging stays disabled until startup succeeds to prevent an unsanitized duplicate
+exception. Runtime logging resumes after the listener starts.
+
+If Render lists only DATABASE_URL, add JWT_SECRET, NODE_ENV, CORS_ORIGINS and
+NODE_VERSION in its environment settings. Prisma generation succeeding does not
+validate the signing secret or production CORS. Keep PORT host-provided and
+TRUST_PROXY_HOPS at its default until the proxy topology is verified.
+
+With pnpm 12.4.2, do not use the obsolete --prod=false flag: the parser rejects it.
+The POSIX hosting install command above sets NODE_ENV=development for installation
+only so build dependencies are available; the API runtime remains production.

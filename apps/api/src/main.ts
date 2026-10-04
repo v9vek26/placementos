@@ -4,10 +4,17 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import type { Request, Response, NextFunction } from 'express';
 import { AppModule } from './app.module.js';
 import { runtimeConfig } from './runtime-config.js';
+import { startupDiagnostic, type StartupStage } from './startup-diagnostics.js';
+
+let startupStage: StartupStage = 'configuration';
 
 async function bootstrap() {
   const config = runtimeConfig(process.env);
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  startupStage = 'initialization';
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    abortOnError: false,
+    logger: false,
+  });
   app.disable('x-powered-by');
   if (config.trustProxy) app.set('trust proxy', config.trustProxy);
   app.use((_request: Request, response: Response, next: NextFunction) => {
@@ -31,12 +38,14 @@ async function bootstrap() {
     }),
   );
 
+  await app.init();
+  startupStage = 'listen';
   await app.listen(config.port, '0.0.0.0');
+  app.useLogger(['log', 'error', 'warn']);
+  console.info('API startup complete.');
 }
 
-bootstrap().catch(() => {
-  console.error(
-    'API startup failed. Check the database and server configuration.',
-  );
+bootstrap().catch((error: unknown) => {
+  console.error(startupDiagnostic(error, startupStage));
   process.exitCode = 1;
 });
