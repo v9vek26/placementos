@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { api, errorMessage, signOut } from "@/lib/api";
 import type { Role, Session } from "@/lib/types";
+
+import { Icon } from "./product";
 
 const SessionContext = createContext<Session | null>(null);
 export function useSession() {
@@ -21,6 +23,8 @@ export function Workspace({
   roles?: Role[];
 }) {
   const pathname = usePathname();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuButton = useRef<HTMLButtonElement>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
@@ -105,19 +109,48 @@ export function Workspace({
           <span className="brand-mark">P</span>PlacementOS
         </Link>
         <div className="account">
-          <span>{session.email}</span>
+          <span className="account-email" title={session.email}>
+            {session.email}
+          </span>
           <span className="badge">{session.role}</span>
           <button className="secondary" onClick={signOut}>
             Sign out
           </button>
         </div>
+        <button
+          ref={menuButton}
+          className="secondary menu-toggle"
+          aria-expanded={menuOpen}
+          aria-controls="workspace-navigation"
+          onClick={() => setMenuOpen(!menuOpen)}
+        >
+          Workspace menu <span aria-hidden="true">{menuOpen ? "−" : "+"}</span>
+        </button>
       </header>
       <div className="workspace">
-        <nav aria-label="Main navigation">
+        <nav
+          id="workspace-navigation"
+          className={`workspace-nav${menuOpen ? " is-open" : ""}`}
+          aria-label="Main navigation"
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              setMenuOpen(false);
+              menuButton.current?.focus();
+            }
+          }}
+        >
+          <p className="nav-label">
+            {session.role === "ADMIN"
+              ? "CAMPUS MANAGEMENT"
+              : session.role === "RECRUITER"
+                ? "HIRING WORKSPACE"
+                : "YOUR CAREER"}
+          </p>
           {links.map(([href, label]) => (
             <Link
               key={href}
               href={href}
+              onClick={() => setMenuOpen(false)}
               aria-current={
                 pathname === href ||
                 (href !== "/dashboard" && pathname.startsWith(`${href}/`))
@@ -125,10 +158,27 @@ export function Workspace({
                   : undefined
               }
             >
+              <Icon
+                name={
+                  href.endsWith("jobs")
+                    ? "jobs"
+                    : href.endsWith("companies")
+                      ? "building"
+                      : href.endsWith("profile")
+                        ? "profile"
+                        : href === "/dashboard"
+                          ? "grid"
+                          : "people"
+                }
+              />{" "}
               {label}
             </Link>
           ))}
-          <p className="nav-note">Your next chapter starts here.</p>
+          <p className="nav-note">
+            {session.role === "STUDENT"
+              ? "Your next chapter starts with one small step."
+              : "Bring people and opportunity together."}
+          </p>
         </nav>
         <main id="main" className="content">
           {roles && !roles.includes(session.role) ? (

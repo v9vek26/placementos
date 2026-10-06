@@ -3,9 +3,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, clearSession, errorMessage } from "@/lib/api";
 import { Field, Notice } from "@/components/ui";
+import { Icon } from "@/components/product";
 import type { Session } from "@/lib/types";
 export default function LoginPage() {
   const router = useRouter();
+  const [showPassword, setShowPassword] = useState(false);
   const [register, setRegister] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -54,6 +56,7 @@ export default function LoginPage() {
           A shared space for students, recruiters, and campus teams to make the
           next move count.
         </p>
+        <div className="auth-benefits"><div><Icon name="search"/>Discover roles that open new doors</div><div><Icon name="check"/>Understand exactly where you qualify</div><div><Icon name="grid"/>Keep every application in view</div></div>
       </section>
       <section className="login-form">
         <h2>{register ? "Start your journey" : "Welcome back"}</h2>
@@ -74,11 +77,13 @@ export default function LoginPage() {
           <Field
             label="Password"
             name="password"
-            type="password"
+            type={showPassword ? "text" : "password"}
+            hint={register ? "Use at least 8 characters." : undefined}
             autoComplete={register ? "new-password" : "current-password"}
             minLength={8}
             required
           />
+          <div className="password-control"><button type="button" className="text-button" aria-pressed={showPassword} onClick={() => setShowPassword(!showPassword)}>{showPassword ? "Hide password" : "Show password"}</button></div>
           <button disabled={busy}>
             {busy ? "Please wait…" : register ? "Create account" : "Sign in"} →
           </button>
@@ -95,6 +100,7 @@ export default function LoginPage() {
             ? "Already have an account? Sign in"
             : "New student? Create an account"}
         </button>
+        <p className="login-note">Built for students, recruiters, and campus teams. Recruiter access is managed by your administrator.</p>
       </section>
     </main>
   );

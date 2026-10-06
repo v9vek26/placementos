@@ -12,6 +12,8 @@ import {
   useResource,
 } from "@/components/ui";
 import { errorMessage, write } from "@/lib/api";
+import { CompanyMark } from "@/components/product";
+import { compensation } from "@/lib/presentation";
 import type { Application, Eligibility, Job, Student } from "@/lib/types";
 export default function JobPage() {
   const { id } = useParams<{ id: string }>();
@@ -37,6 +39,7 @@ export default function JobPage() {
           <div className="details">
             <section>
               <article className="card">
+                <div className="identity"><CompanyMark name={job.company.name} id={job.companyId}/><div><strong>{job.company.name}</strong><p className="company-name">{job.company.industry || "Hiring opportunity"}</p></div></div>
                 <div className="metadata">
                   <Badge value={job.status} />
                   <Badge value={job.type} />
@@ -47,9 +50,7 @@ export default function JobPage() {
                 <p className="prose">{job.description}</p>
                 <h3>Compensation</h3>
                 <p>
-                  {job.compensationMin !== null || job.compensationMax !== null
-                    ? `${job.compensationCurrency} ${job.compensationMin?.toLocaleString() ?? "Not specified"} – ${job.compensationMax?.toLocaleString() ?? "Not specified"}${job.compensationPeriod ? ` / ${job.compensationPeriod.toLowerCase()}` : ""}`
-                    : "Not specified"}
+                  {compensation(job)}
                 </p>
               </article>
               {canManage && (

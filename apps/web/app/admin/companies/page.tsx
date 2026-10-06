@@ -11,6 +11,7 @@ import {
   Textarea,
   useResource,
 } from "@/components/ui";
+import { CompanyMark } from "@/components/product";
 import { errorMessage, write } from "@/lib/api";
 import type { Company } from "@/lib/types";
 export default function CompaniesPage() {
@@ -156,10 +157,10 @@ export default function CompaniesPage() {
       <State {...resource} retry={resource.reload} />
       {companies?.length === 0 && <Empty>No companies match this view.</Empty>}
       {companies?.map((item) => (
-        <article className="card" key={item.id}>
+        <article className="card directory-card" key={item.id}>
           <div className="row">
             <div>
-              <h2>{item.name}</h2>
+              <div className="identity"><CompanyMark name={item.name} id={item.id}/><h2>{item.name}</h2></div>
               <p>
                 {[item.industry, item.location].filter(Boolean).join(" · ")}
               </p>
@@ -172,7 +173,7 @@ export default function CompaniesPage() {
                   setEditing(item);
                   setError("");
                   setSuccess("");
-                  window.scrollTo({ top: 0, behavior: "smooth" });
+                  window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
                 }}
               >
                 Edit

@@ -1,8 +1,19 @@
 # Feature status and verification
 
-Latest verification: 2026-09-26, Node 24.20.0 and pnpm 12.4.2. Both apps build and run locally; existing PostgreSQL passed 28 read-only checks across all three roles. No public deployment is claimed.
+Latest implementation verification: 2026-10-06. VIV-40 local verification is complete; production release verification remains a separate gate described below. Earlier entries are historical evidence.
 
-## Latest continuation
+## VIV-40 continuation — 2026-10-06
+
+- Resumed the existing uncommitted redesign from main at `6ab4bc7`; preserved existing backend, schema, authorization, API contracts, and hosting settings.
+- Finished mobile heading wrapping and recruiter job/candidate tables. Job rows retain job type and compensation; candidate status controls identify the candidate, disable unchanged saves, and report server-confirmed results. Removed unreachable duplicate candidate-card markup.
+- `pnpm verify` passed after final code edits: lint/typecheck for both apps, API and web production builds, 5 deployment-checker tests, 51 API unit tests, 17 web tests, 8 mocked API end-to-end tests, and 84 authorization/operator tests: **165 passed**.
+- Browser layout checks covered **110 route/role/width combinations** at 1440, 1024, 768, 390, and 320 pixels without page overflow. Coverage includes role overviews, jobs, applications, profiles, job detail, manager new/edit forms, and all three admin directories. Screenshots use isolated synthetic fixtures, not production records.
+- Interactive local checks confirmed candidate status saving and its live confirmation, disabled unchanged save, candidate profile disclosure, mobile menu Escape/focus restoration, labeled controls with 44px minimum primary form targets, and API error/retry presentation. This is browser/DOM review, not a screen-reader certification.
+- The existing production baseline passed **21/21 anonymous GET/OPTIONS checks** after an initial API timeout. This does not certify the new deployed revision or authenticated production flows.
+- No production test accounts, database writes, migrations, or fixture cleanup were performed by this continuation. Local fixtures are in-memory only. Real PostgreSQL concurrency/write smoke tests remain separate and require the guarded dedicated test database.
+- Release gates remaining at commit time: push/CI, Vercel revision verification, post-deploy 21/21, authenticated Student/Recruiter/Admin sanity checks, and final Linear completion. Do not mark VIV-40 Done until these are evidenced.
+
+## Historical continuation — 2026-09-26
 
 - `pnpm verify` passed again after application transaction changes: 43 API unit, 7 web session, 8 mocked end-to-end, 84 authorization/operator/target-safety and 5 deployment-checker tests (147 total). Both apps passed lint, typecheck and production builds.
 - Application submission now locks the owned student profile and target job with PostgreSQL `FOR SHARE`, then checks eligibility and inserts using the same transaction. This prevents those records changing between the decision and insertion. Regression tests cover transaction scope, changed eligibility, closed/draft jobs, ownership, duplicates and conflicts. Real PostgreSQL write/concurrency tests remain unrun.

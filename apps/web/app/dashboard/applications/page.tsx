@@ -13,6 +13,8 @@ import {
   State,
   useResource,
 } from "@/components/ui";
+import { CompanyMark, SectionHeading } from "@/components/product";
+import { statusGuidance } from "@/lib/presentation";
 import { errorMessage, write } from "@/lib/api";
 import { applicationStatuses, type Application } from "@/lib/types";
 export default function ApplicationsPage() {
@@ -45,7 +47,7 @@ function ApplicationList() {
         }
         description={
           user.role === "STUDENT"
-            ? "Follow every step of your placement journey."
+            ? "Your applications, current statuses, and next steps."
             : "Review profiles and keep applicants moving forward."
         }
       />
@@ -77,20 +79,70 @@ function ApplicationList() {
           )}
         </Empty>
       )}
-      {applications?.map((application) => (
-        <ApplicationCard
-          key={application.id}
-          application={application}
-          editable={user.role !== "STUDENT"}
-          onSaved={(saved) =>
-            resource.setData(
-              (items) =>
-                items?.map((item) => (item.id === saved.id ? saved : item)) ||
-                [],
-            )
+      {applications && !resource.error && (
+        <SectionHeading
+          title={`${applications.length} ${user.role === "STUDENT" ? (applications.length === 1 ? "application" : "applications") : applications.length === 1 ? "candidate" : "candidates"}`}
+          description={
+            user.role === "STUDENT"
+              ? "Status reflects the latest saved recruiter decision."
+              : "Review each profile and save status changes explicitly."
           }
         />
-      ))}
+      )}
+      {user.role !== "STUDENT" && applications && applications.length > 0 ? (
+        <div
+          className="table-wrap"
+          role="region"
+          aria-label="Candidate review"
+          tabIndex={0}
+        >
+          <table className="responsive-table candidate-table">
+            <caption className="sr-only">
+              Candidates and current application status
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Candidate</th>
+                <th scope="col">Opportunity</th>
+                <th scope="col">Profile</th>
+                <th scope="col">Status &amp; action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {applications.map((application) => (
+                <ApplicationCard
+                  key={application.id}
+                  application={application}
+                  editable
+                  onSaved={(saved) =>
+                    resource.setData(
+                      (items) =>
+                        items?.map((item) =>
+                          item.id === saved.id ? saved : item,
+                        ) || [],
+                    )
+                  }
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        applications?.map((application) => (
+          <ApplicationCard
+            key={application.id}
+            application={application}
+            editable={user.role !== "STUDENT"}
+            onSaved={(saved) =>
+              resource.setData(
+                (items) =>
+                  items?.map((item) => (item.id === saved.id ? saved : item)) ||
+                  [],
+              )
+            }
+          />
+        ))
+      )}
     </>
   );
 }
@@ -126,37 +178,37 @@ function ApplicationCard({
   }
   const profile = a.studentProfile;
   const resume = safeUrl(profile.resumeUrl);
-  return (
-    <article className="card">
-      <div className="row">
-        <div>
-          <p className="eyebrow">{a.job.company.name}</p>
-          <h2>{a.job.title}</h2>
+  if (editable)
+    return (
+      <tr>
+        <td>
+          <div className="identity">
+            <CompanyMark name={profile.fullName} id={profile.id} />
+            <div>
+              <strong>{profile.fullName}</strong>
+              <p className="company-name">Applied {date(a.appliedAt)}</p>
+            </div>
+          </div>
+        </td>
+        <td data-label="Opportunity">
+          <Link href={"/dashboard/jobs/" + a.job.id}>{a.job.title}</Link>
+          <p className="company-name">{a.job.company.name}</p>
+        </td>
+        <td data-label="Profile">
           <p>
-            {profile.fullName} · Applied {date(a.appliedAt)}
+            {profile.branch} · {profile.graduationYear}
           </p>
-        </div>
-        <Badge value={a.status} />
-      </div>
-      {a.job.status === "OPEN" || editable ? (
-        <Link href={`/dashboard/jobs/${a.job.id}`}>View job →</Link>
-      ) : (
-        <p>This job is closed. Your application remains available here.</p>
-      )}
-      {editable && (
-        <>
+          <small>CGPA {profile.cgpa ?? "not provided"}</small>
           <details>
             <summary>Student profile</summary>
-            <div className="metadata">
-              <span>Roll number: {profile.collegeRollNumber}</span>
-              <span>
-                {profile.branch} · {profile.graduationYear}
-              </span>
-              <span>CGPA: {profile.cgpa ?? "Not provided"}</span>
-              <span>Backlogs: {profile.activeBacklogs}</span>
-              <span>10th: {profile.tenthPercentage ?? "Not provided"}</span>
-              <span>12th: {profile.twelfthPercentage ?? "Not provided"}</span>
-            </div>
+            <p>Roll number: {profile.collegeRollNumber}</p>
+            <p>
+              Active backlogs: {profile.activeBacklogs}
+              <br />
+              10th: {profile.tenthPercentage ?? "Not provided"}
+              <br />
+              12th: {profile.twelfthPercentage ?? "Not provided"}
+            </p>
             <p>Skills: {profile.skills.join(", ") || "Not provided"}</p>
             {resume && (
               <a href={resume} target="_blank" rel="noopener noreferrer">
@@ -164,11 +216,15 @@ function ApplicationCard({
               </a>
             )}
           </details>
-          <div className="actions">
+        </td>
+        <td data-label="Status">
+          <Badge value={a.status} />
+          <div className="candidate-controls">
             <label className="field">
               Application status
               <select
                 value={status}
+                aria-label={`Application status for ${profile.fullName}`}
                 onChange={(e) =>
                   setStatus(e.target.value as Application["status"])
                 }
@@ -180,13 +236,49 @@ function ApplicationCard({
               </select>
             </label>
             <button
+              aria-label={`Update status for ${profile.fullName}`}
               disabled={busy || status === a.status}
               onClick={() => void save()}
             >
               {busy ? "Saving…" : "Update status"}
             </button>
           </div>
-        </>
+          <Notice error={error} success={success} />
+        </td>
+      </tr>
+    );
+  return (
+    <article className="card application-card">
+      <div className="row">
+        <div className="identity">
+          <CompanyMark
+            name={editable ? profile.fullName : a.job.company.name}
+            id={editable ? profile.id : a.job.companyId}
+          />
+          <div>
+            <p className="eyebrow">{a.job.company.name}</p>
+            <h2>{editable ? profile.fullName : a.job.title}</h2>
+            <p>
+              {editable ? a.job.title : profile.fullName} · Applied{" "}
+              {date(a.appliedAt)}
+            </p>
+          </div>
+        </div>
+        <Badge value={a.status} />
+      </div>
+      {a.job.status === "OPEN" || editable ? (
+        <Link href={`/dashboard/jobs/${a.job.id}`}>View job →</Link>
+      ) : (
+        <p>This job is closed. Your application remains available here.</p>
+      )}
+      {!editable && (
+        <div className="current-status">
+          <strong>What comes next</strong>
+          <p>{statusGuidance(a.status)}</p>
+          <small>
+            Record updated {date(a.updatedAt)} · Current status only
+          </small>
+        </div>
       )}
       <Notice error={error} success={success} />
     </article>

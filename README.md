@@ -4,7 +4,7 @@ A local placement and internship MVP for students, recruiters, and campus admini
 
 Students maintain an academic profile, browse real opportunities, check eligibility, apply, and track progress. Recruiters manage their own jobs and applicants. Administrators manage roles, companies, and recruiter onboarding.
 
-**Status:** MVP implemented, with local hardening and verification updated on 2026-09-26: 147 database-free tests, 28 read-only database checks and 16 deployment smoke checks passed locally. Public deployment and production operations have not been verified. The browser currently stores short-lived JWTs in localStorage; see [security and hardening](docs/STATUS.md).
+**Status:** VIV-40 interface updates passed local lint, typecheck, 165 database-free automated tests, and production builds on 2026-10-06. The existing [web deployment](https://placementos-sigma.vercel.app) and API passed all 21 anonymous deployment checks before this release. Post-release CI, deployed revision, and authenticated production role checks must be verified separately; see [verification status](docs/STATUS.md). The browser stores short-lived JWTs in localStorage.
 
 [Development guide](docs/DEVELOPMENT.md) · [Deployment guide](docs/DEPLOYMENT.md) · [Architecture](docs/ARCHITECTURE.md) · [API map](docs/API.md) · [Verification and backlog](docs/STATUS.md) · [Security](SECURITY.md)
 
@@ -13,7 +13,8 @@ For step-by-step operator instructions, use the [manual release checklist](docs/
 ## Implemented
 
 - Registration, login, current-session verification, database-backed RBAC, and ownership enforcement.
-- Distinct student, recruiter, and admin dashboards with role-aware navigation.
+- Distinct student, recruiter, and admin dashboards with role-aware mobile navigation, accessible focus states, real-data summaries, and company initials.
+- Compact recruiter job/candidate tables that adapt to narrow screens, with explicit status saving and candidate-specific control labels.
 - Student profile, job search, explainable eligibility checks, applications, and status tracking.
 - Recruiter profile edits, create/edit/close/delete jobs, applicant review, and status updates.
 - Admin user role management, company CRUD, recruiter onboarding/management, and global jobs/applications views.

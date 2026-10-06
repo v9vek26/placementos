@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 import { api, errorMessage } from "@/lib/api";
 
 export function useResource<T>(path: string) {
@@ -48,9 +48,14 @@ export function State({
     );
   if (loading)
     return (
-      <p className="card" role="status">
-        Loading…
-      </p>
+      <div className="card loading-state" role="status" aria-live="polite">
+        <span className="loading-label">Loading your workspace…</span>
+        <div className="skeleton-lines" aria-hidden="true">
+          <span />
+          <span />
+          <span />
+        </div>
+      </div>
     );
   return null;
 }
@@ -66,7 +71,7 @@ export function Heading({
   return (
     <div className="page-heading">
       <div>
-        <p className="eyebrow">PLACEMENTOS / WORKSPACE</p>
+        <p className="eyebrow">YOUR PLACEMENT WORKSPACE</p>
         <h1>{title}</h1>
         <p>{description}</p>
       </div>
@@ -97,7 +102,14 @@ export function Notice({
   );
 }
 export function Empty({ children }: { children: React.ReactNode }) {
-  return <div className="card empty">{children}</div>;
+  return (
+    <div className="card empty">
+      <span className="empty-symbol" aria-hidden="true">
+        ↗
+      </span>
+      {children}
+    </div>
+  );
 }
 export function label(value: string) {
   return value
@@ -128,15 +140,29 @@ export function Field({
   label: title,
   name,
   value,
+  hint,
   ...props
-}: { label: string; name: string; value?: string | number | null } & Omit<
-  React.InputHTMLAttributes<HTMLInputElement>,
-  "value"
->) {
+}: {
+  label: string;
+  name: string;
+  value?: string | number | null;
+  hint?: string;
+} & Omit<React.InputHTMLAttributes<HTMLInputElement>, "value">) {
+  const hintId = useId();
   return (
     <label className="field">
       {title}
-      <input name={name} defaultValue={value ?? ""} {...props} />
+      <input
+        name={name}
+        defaultValue={value ?? ""}
+        aria-describedby={hint ? hintId : undefined}
+        {...props}
+      />
+      {hint && (
+        <span id={hintId} className="field-hint">
+          {hint}
+        </span>
+      )}
     </label>
   );
 }

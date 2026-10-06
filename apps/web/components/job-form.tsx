@@ -140,6 +140,7 @@ export function JobEditor({ job }: { job?: Job }) {
           <form onSubmit={submit} className="card">
             <fieldset disabled={busy}>
               <div className="form-grid">
+                <div className="wide form-section"><h2>01 · The opportunity</h2><p>Describe the role and how students will work with you.</p></div>
                 {!job && (
                   <label className="field wide">
                     Posting recruiter
@@ -190,6 +191,7 @@ export function JobEditor({ job }: { job?: Job }) {
                   type="datetime-local"
                   value={localDeadline}
                 />
+                <div className="wide form-section"><h2>02 · Compensation</h2><p>Share a range or one bound. Leave optional amounts blank when not specified.</p></div>
                 <Field
                   label="Minimum compensation"
                   name="compensationMin"
@@ -219,6 +221,7 @@ export function JobEditor({ job }: { job?: Job }) {
                   value={job?.compensationPeriod || ""}
                   options={["", ...compensationPeriods]}
                 />
+                <div className="wide form-section"><h2>03 · Eligibility</h2><p>These requirements are checked by the server when students apply.</p></div>
                 <Field
                   label="Minimum CGPA (0–10)"
                   name="minCgpa"
@@ -279,7 +282,7 @@ export function JobEditor({ job }: { job?: Job }) {
         )
       )}
       {job && (
-        <div className="card">
+        <div className="card danger-zone">
           <h2>Delete opportunity</h2>
           <p>
             Closing the job preserves its application history. Deleting

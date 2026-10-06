@@ -37,11 +37,12 @@ export default function UsersPage() {
       <State {...resource} retry={resource.reload} />
       {users?.length === 0 && <Empty>No matching users.</Empty>}
       {users && users.length > 0 && (
-        <div className="table-wrap">
+        <div className="table-wrap" role="region" aria-label="Campus users" tabIndex={0}>
           <table>
+            <caption className="sr-only">User accounts and role management</caption>
             <thead>
               <tr>
-                <th>Email</th>
+                <th scope="col">Email</th>
                 <th>Role</th>
                 <th>Action</th>
               </tr>

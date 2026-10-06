@@ -2,14 +2,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useSession } from "@/components/workspace";
-import {
-  Badge,
-  date,
-  Empty,
-  Heading,
-  State,
-  useResource,
-} from "@/components/ui";
+import { Empty, Heading, State, useResource } from "@/components/ui";
+import { JobCard, JobTable } from "@/components/product";
 import type { Job } from "@/lib/types";
 export default function JobsPage() {
   const user = useSession();
@@ -89,36 +83,29 @@ export default function JobsPage() {
           {user.role !== "STUDENT"
             ? " or create your first opportunity."
             : " or check back for new opportunities."}
+          <div className="actions">
+            <button
+              className="secondary"
+              onClick={() => {
+                setSearch("");
+                setType("all");
+                setStatus("all");
+              }}
+            >
+              Clear filters
+            </button>
+          </div>
         </Empty>
       )}
-      {jobs?.map((job) => (
-        <article className="card" key={job.id}>
-          <div className="row">
-            <div>
-              <p className="eyebrow">{job.company.name}</p>
-              <h2>
-                <Link href={`/dashboard/jobs/${job.id}`}>{job.title}</Link>
-              </h2>
-              <div className="metadata">
-                <Badge value={job.type} />
-                <span>{job.location || "Location not specified"}</span>
-                <Badge value={job.workMode} />
-              </div>
-            </div>
-            <Badge value={job.status} />
-          </div>
-          <p>
-            {job.description.slice(0, 220)}
-            {job.description.length > 220 ? "…" : ""}
-          </p>
-          <div className="row">
-            <small>Deadline: {date(job.applicationDeadline)}</small>
-            <Link className="text-link" href={`/dashboard/jobs/${job.id}`}>
-              View opportunity →
-            </Link>
-          </div>
-        </article>
-      ))}
+      {jobs && !resource.error && (
+        <p className="result-count" role="status">
+          {jobs.length} {jobs.length === 1 ? "opportunity" : "opportunities"} in
+          this view
+        </p>
+      )}
+      {user.role === "STUDENT"
+        ? jobs?.map((job) => <JobCard job={job} key={job.id} />)
+        : jobs && jobs.length > 0 && <JobTable jobs={jobs} />}
     </>
   );
 }

@@ -10,6 +10,7 @@ import {
   State,
   useResource,
 } from "@/components/ui";
+import { CompanyMark } from "@/components/product";
 import { errorMessage, write } from "@/lib/api";
 import type { Recruiter, Student } from "@/lib/types";
 export default function ProfilePage() {
@@ -80,8 +81,10 @@ function StudentProfile() {
       {resource.data && (
         <form className="card" onSubmit={save} key={profile?.id || "new"}>
           <fieldset disabled={busy}>
-            <legend>Academic profile</legend>
+            <legend>Your student profile</legend>
+            <p>Keep your details accurate. Eligibility is checked against each job’s requirements.</p>
             <div className="form-grid">
+              <div className="wide form-section"><h2>About you</h2><p>Your name and academic identity.</p></div>
               <Field
                 label="Full name"
                 name="fullName"
@@ -110,6 +113,7 @@ function StudentProfile() {
                 value={profile?.graduationYear}
                 required
               />
+              <div className="wide form-section"><h2>Academic record</h2><p>Enter your current results. Zero is a valid value.</p></div>
               <Field
                 label="CGPA (0–10)"
                 name="cgpa"
@@ -146,6 +150,7 @@ function StudentProfile() {
                 step="0.01"
                 value={profile?.twelfthPercentage}
               />
+              <div className="wide form-section"><h2>Skills &amp; resume</h2><p>Help recruiters understand what you can bring to their team.</p></div>
               <Field
                 label="Skills (comma separated)"
                 name="skills"
@@ -154,6 +159,7 @@ function StudentProfile() {
               <Field
                 label="Resume URL (https://…)"
                 name="resumeUrl"
+                hint="Use a shareable resume link that recruiters can open. This field does not upload files."
                 type="url"
                 pattern="https?://.*"
                 value={profile?.resumeUrl}
@@ -207,7 +213,7 @@ function RecruiterProfile() {
       )}
       {profile && (
         <form className="card" onSubmit={save}>
-          <h2>{profile.company.name}</h2>
+          <div className="identity"><CompanyMark name={profile.company.name} id={profile.companyId}/><h2>{profile.company.name}</h2></div>
           <p>Your company membership is managed by an administrator.</p>
           <fieldset disabled={busy}>
             <div className="form-grid">
