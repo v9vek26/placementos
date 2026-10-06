@@ -4,6 +4,8 @@ Latest implementation verification: 2026-10-06. VIV-40 local verification is com
 
 ## VIV-40 continuation — 2026-10-06
 
+- Release commit `58260a5` deployed successfully to Vercel Production. Its GitHub workflow passed `pnpm verify`, then failed the dependency audit. The only dependency change in the follow-up is a `source-map-js` override/lockfile patch from 1.2.1 to 1.2.2 for [GHSA-68fv-2mgg-jv7q](https://github.com/advisories/GHSA-68fv-2mgg-jv7q). Local production audit now reports no known vulnerabilities; final hosted CI/deployment evidence is tracked on VIV-40.
+
 - Resumed the existing uncommitted redesign from main at `6ab4bc7`; preserved existing backend, schema, authorization, API contracts, and hosting settings.
 - Finished mobile heading wrapping and recruiter job/candidate tables. Job rows retain job type and compensation; candidate status controls identify the candidate, disable unchanged saves, and report server-confirmed results. Removed unreachable duplicate candidate-card markup.
 - `pnpm verify` passed after final code edits: lint/typecheck for both apps, API and web production builds, 5 deployment-checker tests, 51 API unit tests, 17 web tests, 8 mocked API end-to-end tests, and 84 authorization/operator tests: **165 passed**.

@@ -8,7 +8,8 @@ allowBuilds:
   unrs-resolver: true
   bcrypt: true
 
-# Patched transitive dependencies used by Prisma's CLI/config tooling.
+# Patched transitive dependencies used by Prisma tooling and web CSS builds.
 overrides:
   "@prisma/config>deepmerge-ts": "8.0.0"
   "prisma>mysql2": "3.23.1"
+  "source-map-js": "1.2.2"
